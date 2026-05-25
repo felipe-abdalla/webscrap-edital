@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editais de Fomento</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+  <style>
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --brand:        #0A3D62;
+      --brand-mid:    #1565a8;
+      --accent:       #F0A500;
+      --accent-dim:   #f0a50022;
+      --surface:      #F4F7FB;
+      --card-bg:      #FFFFFF;
+      --border:       #DDE3EE;
+      --text:         #1A2540;
+      --muted:        #6B7A99;
+      --success:      #1B7F5E;
+      --danger:       #C0392B;
+      --tag-bg:       #EAF0FA;
+      --tag-text:     #2C5BAA;
+      --radius:       10px;
+      --shadow:       0 2px 12px rgba(10,61,98,.07);
+      --shadow-hover: 0 6px 24px rgba(10,61,98,.13);
+    }
+
+    /* ── Base ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, h4, h5, .font-display {
+      font-family: 'Syne', sans-serif;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    #sidebar {
+      width: 280px;
+      min-height: 100vh;
+      background: var(--brand);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: width .25s ease;
+    }
+
+    #sidebar .sidebar-brand {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+
+    #sidebar .sidebar-brand h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+    }
+
+    #sidebar .sidebar-brand .subtitle {
+      font-size: .72rem;
+      color: rgba(255,255,255,.5);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-top: 4px;
+    }
+
+    #sidebar nav {
+      padding: 20px 0;
+      flex: 1;
+    }
+
+    #sidebar .nav-label {
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: rgba(255,255,255,.4);
+      padding: 0 24px;
+      margin: 16px 0 6px;
+    }
+
+    #sidebar .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 24px;
+      color: rgba(255,255,255,.75);
+      font-size: .88rem;
+      font-weight: 500;
+      border-radius: 0;
+      transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+
+    #sidebar .nav-link:hover,
+    #sidebar .nav-link.active {
+      color: #fff;
+      background: rgba(255,255,255,.07);
+      border-left-color: var(--accent);
+    }
+
+    #sidebar .nav-link i { font-size: 1rem; opacity: .8; }
+
+    /* ── Main layout ─────────────────────────────────────────── */
+    #main {
+      margin-left: 280px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Topbar ─────────────────────────────────────────────── */
+    #topbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    #topbar .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin: 0;
+    }
+
+    /* ── Content area ───────────────────────────────────────── */
+    #content { padding: 28px 32px; flex: 1; }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title i { color: var(--accent); font-size: 1.1rem; }
+
+    /* ── Tag input ──────────────────────────────────────────── */
+    #tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      min-height: 48px;
+      align-items: center;
+      cursor: text;
+      transition: border-color .2s;
+    }
+
+    #tags-container:focus-within { border-color: var(--brand-mid); }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border: 1px solid #c5d6f5;
+      border-radius: 6px;
+      padding: 3px 10px 3px 12px;
+      font-size: .82rem;
+      font-weight: 500;
+    }
+
+    .tag button {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      font-size: .85rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      transition: color .15s;
+    }
+
+    .tag button:hover { color: var(--danger); }
+
+    #tag-input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--text);
+      min-width: 140px;
+      flex: 1;
+    }
+
+    /* ── Stats bar ──────────────────────────────────────────── */
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .stat-card .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--brand);
+      line-height: 1;
+    }
+
+    .stat-card .stat-label {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    /* ── Edital cards ───────────────────────────────────────── */
+    .edital-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s, border-color .2s, transform .15s;
+      position: relative;
+    }
+
+    .edital-card:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: var(--brand-mid);
+      transform: translateY(-1px);
+    }
+
+    .edital-card.no-deadline {
+      border-left: 3px solid var(--accent);
+      background: linear-gradient(to right, #fffdf5 0%, var(--card-bg) 60px);
+    }
+
+    .edital-card .edital-title {
+      font-family: 'Syne', sans-serif;
+      font-size: .97rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .edital-card .edital-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .edital-card .edital-title a:hover { color: var(--brand-mid); text-decoration: underline; }
+
+    .edital-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .76rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 5px;
+    }
+
+    .meta-badge.domain  { background: var(--tag-bg); color: var(--tag-text); }
+    .meta-badge.score   { background: #eaf5ee; color: var(--success); }
+    .meta-badge.deadline-ok { background: #eaf5ee; color: var(--success); }
+    .meta-badge.deadline-warn { background: #fff8e8; color: #9a6700; }
+    .meta-badge.deadline-none { background: #fff3e0; color: #b45309; }
+
+    .edital-phrase {
+      font-size: .8rem;
+      color: var(--muted);
+      font-style: italic;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    .edital-phrase i { color: var(--accent); margin-right: 4px; }
+
+    .btn-del {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 4px 6px;
+      border-radius: 5px;
+      transition: color .15s, background .15s;
+    }
+
+    .btn-del:hover { color: var(--danger); background: #fdecea; }
+
+    /* ── Divider sem-deadline ───────────────────────────────── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0 16px;
+      color: var(--muted);
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Run pipeline button ────────────────────────────────── */
+    .btn-run {
+      background: var(--accent);
+      color: var(--brand);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 22px;
+      font-size: .9rem;
+      letter-spacing: .01em;
+      transition: background .2s, box-shadow .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-run:hover:not(:disabled) {
+      background: #e09500;
+      box-shadow: 0 4px 14px rgba(240,165,0,.35);
+    }
+
+    .btn-run:disabled { opacity: .6; cursor: not-allowed; }
+
+    .btn-save {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      padding: 9px 20px;
+      font-size: .88rem;
+      transition: background .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn-save:hover { background: var(--brand-mid); }
+
+    /* ── Empty state ────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state i { font-size: 3rem; opacity: .25; display: block; margin-bottom: 14px; }
+    .empty-state p { font-size: .9rem; }
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    #toast-wrap {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast-msg {
+      background: var(--brand);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      font-size: .86rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-hover);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      animation: slideUp .3s ease;
+    }
+
+    .toast-msg.success { background: var(--success); }
+    .toast-msg.error   { background: var(--danger); }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Spinner overlay ────────────────────────────────────── */
+    #run-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,61,98,.55);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    #run-overlay.show { display: flex; }
+
+    /* ── Search bar ─────────────────────────────────────────── */
+    #search-bar {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--text);
+      background: var(--card-bg);
+      width: 260px;
+      transition: border-color .2s;
+    }
+
+    #search-bar:focus { outline: none; border-color: var(--brand-mid); }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      #sidebar { width: 220px; }
+      #main    { margin-left: 220px; }
+      #content { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ Sidebar ══════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="sidebar-brand">
+    <h1><i class="bi bi-journal-text me-2" style="color:var(--accent)"></i>Editais<br>de Fomento</h1>
+    <div class="subtitle">Painel de Gerenciamento</div>
+  </div>
+
+  <nav>
+    <div class="nav-label">Navegação</div>
+    <a href="#section-config" class="nav-link active" onclick="scrollTo('section-config')">
+      <i class="bi bi-sliders"></i> Configurações
+    </a>
+    <a href="#section-results" class="nav-link" onclick="scrollTo('section-results')">
+      <i class="bi bi-list-ul"></i> Resultados
+    </a>
+
+    <div class="nav-label mt-3">Pipeline</div>
+    <a href="#" class="nav-link" id="sidebar-run-btn">
+      <i class="bi bi-play-circle"></i> Executar busca
+    </a>
+  </nav>
+
+  <div style="padding:20px 24px; border-top:1px solid rgba(255,255,255,.1); font-size:.72rem; color:rgba(255,255,255,.3);">
+    TCC · Sistema de Editais<br>Python + Flask + Bootstrap
+  </div>
+</aside>
+
+<!-- ══ Main ═════════════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <h2 class="page-title"><i class="bi bi-grid-1x2 me-2"></i>Painel de Editais</h2>
+    <div class="d-flex align-items-center gap-3">
+      <input id="search-bar" type="text" placeholder="&#xF52A;  Buscar por título ou domínio…" />
+      <button class="btn-run" id="run-btn">
+        <i class="bi bi-play-fill"></i> Executar Pipeline
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4" id="stats-row">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total de Editais</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-com-deadline">—</div>
+          <div class="stat-label">Com Prazo</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-sem-deadline">—</div>
+          <div class="stat-label">Sem Prazo</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-proximos">—</div>
+          <div class="stat-label">Vencem em 30 dias</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Configurações ──────────────────────────────────────────────── -->
+    <div class="panel" id="section-config">
+      <div class="panel-title"><i class="bi bi-sliders"></i> Configurações do Pipeline</div>
+
+      <div class="row g-4">
+        <!-- Tópicos -->
+        <div class="col-md-8">
+          <label class="form-label fw-semibold" style="font-size:.85rem; color:var(--brand)">
+            Tópicos de Busca
+            <span class="text-muted fw-normal ms-1" style="font-size:.78rem">(Enter ou vírgula para adicionar)</span>
+          </label>
+          <div id="tags-container" onclick="document.getElementById('tag-input').focus()">
+            <!-- tags injetadas via JS -->
+            <input id="tag-input" type="text" placeholder="Ex.: saúde, educação…" autocomplete="off" />
+          </div>
+          <div class="mt-1" style="font-size:.75rem; color:var(--muted)">
+            Estes termos substituem a variável <code>TOPICS</code> em <code>query_builder.py</code>
+          </div>
+        </div>
+
+        <!-- Ano -->
+        <div class="col-md-4">
+          <label class="form-label fw-semibold" style="font-size:.85rem; color:var(--brand)">
+            Ano de Referência
+          </label>
+          <input id="year-input" type="number" class="form-control" min="2020" max="2040"
+                 value="{{ year }}"
+                 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; letter-spacing:.04em;" />
+          <div class="mt-1" style="font-size:.75rem; color:var(--muted)">
+            Altera a variável <code>YEAR</code> em <code>query_ranker.py</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex align-items-center gap-3 flex-wrap">
+        <button class="btn-save" id="save-btn">
+          <i class="bi bi-floppy"></i> Salvar Configurações
+        </button>
+        <span id="save-status" style="font-size:.82rem; color:var(--muted);"></span>
+      </div>
+    </div>
+
+    <!-- ── Resultados ─────────────────────────────────────────────────── -->
+    <div class="panel" id="section-results">
+      <div class="panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><i class="bi bi-list-ul"></i> Editais Encontrados</span>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+            <input class="form-check-input" type="checkbox" id="toggle-no-deadline" role="switch"
+                   style="width:2.4em; height:1.2em; cursor:pointer;" />
+            <label class="form-check-label" for="toggle-no-deadline"
+                   style="font-size:.82rem; color:var(--muted); font-weight:400; cursor:pointer;">
+              Mostrar sem prazo
+            </label>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                  id="refresh-btn" style="font-size:.8rem; border-radius:7px;">
+            <i class="bi bi-arrow-clockwise"></i> Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista -->
+      <div id="edital-list">
+        <div class="empty-state">
+          <i class="bi bi-hourglass-split"></i>
+          <p>Carregando editais…</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══ Spinner overlay ══════════════════════════════════════════════════ -->
+<div id="run-overlay">
+  <div class="spinner-border text-warning" role="status" style="width:3rem;height:3rem;"></div>
+  <span>Executando pipeline de busca…</span>
+  <small style="opacity:.6; font-weight:400; font-size:.85rem;">Isso pode levar alguns minutos</small>
+</div>
+
+<!-- ══ Toast container ══════════════════════════════════════════════════ -->
+<div id="toast-wrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ── Utils ──────────────────────────────────────────────────────────── */
+function toast(msg, type = 'info') {
+  const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
+  const el = document.createElement('div');
+  el.className = `toast-msg ${type}`;
+  el.innerHTML = `<i class="bi ${icons[type] || icons.info}"></i>${msg}`;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function fmtDeadline(iso) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function daysUntil(iso) {
+  if (!iso) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dl = new Date(iso + 'T00:00:00');
+  return Math.round((dl - today) / 86400000);
+}
+
+function deadlineBadge(iso) {
+  if (!iso) return `<span class="meta-badge deadline-none"><i class="bi bi-question-circle"></i> Prazo não identificado</span>`;
+  const days = daysUntil(iso);
+  const label = fmtDeadline(iso);
+  if (days < 0)  return `<span class="meta-badge" style="background:#fdecea;color:var(--danger)"><i class="bi bi-x-circle"></i> Encerrado (${label})</span>`;
+  if (days <= 7)  return `<span class="meta-badge deadline-warn"><i class="bi bi-exclamation-triangle-fill"></i> ${label} · ${days}d</span>`;
+  if (days <= 30) return `<span class="meta-badge deadline-warn"><i class="bi bi-clock"></i> ${label} · ${days}d</span>`;
+  return `<span class="meta-badge deadline-ok"><i class="bi bi-calendar-check"></i> ${label}</span>`;
+}
+
+function scoreStars(score) {
+  const s = Math.min(score, 10);
+  return `<span class="meta-badge score"><i class="bi bi-lightning-fill"></i> Score ${score}</span>`;
+}
+
+/* ── State ──────────────────────────────────────────────────────────── */
+let allEditais  = [];
+let searchQuery = '';
+
+/* ── Tag manager ────────────────────────────────────────────────────── */
+const tagsContainer = document.getElementById('tags-container');
+const tagInput      = document.getElementById('tag-input');
+let   currentTags   = {{ topics | tojson }};
+
+function renderTags() {
+  // Remove tags antigas (mantém o input)
+  tagsContainer.querySelectorAll('.tag').forEach(t => t.remove());
+  currentTags.forEach((tag, i) => {
+    const el = document.createElement('span');
+    el.className = 'tag';
+    el.innerHTML = `${tag}<button onclick="removeTag(${i})" title="Remover"><i class="bi bi-x"></i></button>`;
+    tagsContainer.insertBefore(el, tagInput);
+  });
+}
+
+function addTag(raw) {
+  raw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).forEach(t => {
+    if (!currentTags.includes(t)) currentTags.push(t);
+  });
+  tagInput.value = '';
+  renderTags();
+}
+
+function removeTag(i) {
+  currentTags.splice(i, 1);
+  renderTags();
+}
+
+tagInput.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ',') && tagInput.value.trim()) {
+    e.preventDefault();
+    addTag(tagInput.value);
+  }
+  if (e.key === 'Backspace' && !tagInput.value && currentTags.length) {
+    currentTags.pop();
+    renderTags();
+  }
+});
+
+tagInput.addEventListener('blur', () => { if (tagInput.value.trim()) addTag(tagInput.value); });
+renderTags();
+
+/* ── Save settings ──────────────────────────────────────────────────── */
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const year = document.getElementById('year-input').value.trim();
+  const status = document.getElementById('save-status');
+
+  if (!year.match(/^\d{4}$/)) { toast('Ano inválido.', 'error'); return; }
+
+  status.textContent = 'Salvando…';
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topics: currentTags, year })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      status.textContent = '✓ Salvo';
+      toast('Configurações salvas com sucesso.', 'success');
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    } else {
+      toast(data.error || 'Erro ao salvar.', 'error');
+      status.textContent = '';
+    }
+  } catch (e) {
+    toast('Falha na conexão.', 'error');
+    status.textContent = '';
+  }
+});
+
+/* ── Load editais ───────────────────────────────────────────────────── */
+async function loadEditais() {
+  const includeNone = document.getElementById('toggle-no-deadline').checked;
+  try {
+    const r = await fetch(`/api/editais?include_no_deadline=${includeNone}`);
+    const data = await r.json();
+    allEditais = data.editais || [];
+    renderEditais();
+    updateStats();
+  } catch (e) {
+    toast('Erro ao carregar editais.', 'error');
+  }
+}
+
+/* ── Render editais ─────────────────────────────────────────────────── */
+function renderEditais() {
+  const q = searchQuery.toLowerCase();
+  const includeNone = document.getElementById('toggle-no-deadline').checked;
+
+  let comPrazo  = allEditais.filter(e => e.deadline);
+  let semPrazo  = allEditais.filter(e => !e.deadline);
+
+  if (q) {
+    const filt = e => (e.title + e.domain).toLowerCase().includes(q);
+    comPrazo = comPrazo.filter(filt);
+    semPrazo = semPrazo.filter(filt);
+  }
+
+  const container = document.getElementById('edital-list');
+
+  if (!comPrazo.length && !semPrazo.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <p>${q ? 'Nenhum edital encontrado para esta busca.' : 'Nenhum edital no banco de dados.<br>Execute o pipeline para buscar novos editais.'}</p>
+      </div>`;
+    return;
+  }
+
+  let html = comPrazo.map(e => cardHTML(e, false)).join('');
+
+  if (includeNone && semPrazo.length) {
+    html += `
+      <div class="section-divider">
+        <i class="bi bi-question-circle"></i>
+        ${semPrazo.length} sem prazo identificado
+      </div>`;
+    html += semPrazo.map(e => cardHTML(e, true)).join('');
+  }
+
+  container.innerHTML = html;
+
+  // Bind delete buttons
+  container.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', () => deleteEdital(+btn.dataset.id));
+  });
+}
+
+function cardHTML(e, noDeadline) {
+  return `
+    <div class="edital-card ${noDeadline ? 'no-deadline' : ''}" data-id="${e.id}">
+      <button class="btn-del" data-id="${e.id}" title="Remover edital">
+        <i class="bi bi-trash3"></i>
+      </button>
+      <div class="edital-title">
+        <a href="${e.url}" target="_blank" rel="noopener">${e.title}</a>
+      </div>
+      <div class="edital-meta">
+        ${e.domain ? `<span class="meta-badge domain"><i class="bi bi-globe2"></i>${e.domain}</span>` : ''}
+        ${deadlineBadge(e.deadline)}
+        ${scoreStars(e.score)}
+        <span class="meta-badge" style="background:#f3f4f6;color:var(--muted)">
+          <i class="bi bi-clock-history"></i> ${e.created_at}
+        </span>
+      </div>
+      ${e.phrase ? `<div class="edital-phrase"><i class="bi bi-quote"></i>${e.phrase}</div>` : ''}
+    </div>`;
+}
+
+/* ── Stats ──────────────────────────────────────────────────────────── */
+function updateStats() {
+  // Busca todos para calcular stats completas (independente do filtro de exibição)
+  fetch('/api/editais?include_no_deadline=true').then(r => r.json()).then(data => {
+    const all = data.editais || [];
+    const comDl = all.filter(e => e.deadline);
+    const semDl = all.filter(e => !e.deadline);
+    const prox  = comDl.filter(e => { const d = daysUntil(e.deadline); return d !== null && d >= 0 && d <= 30; });
+
+    document.getElementById('stat-total').textContent        = all.length;
+    document.getElementById('stat-com-deadline').textContent = comDl.length;
+    document.getElementById('stat-sem-deadline').textContent = semDl.length;
+    document.getElementById('stat-proximos').textContent     = prox.length;
+  });
+}
+
+/* ── Delete ─────────────────────────────────────────────────────────── */
+async function deleteEdital(id) {
+  if (!confirm('Remover este edital do banco de dados?')) return;
+  try {
+    const r = await fetch(`/api/editais/${id}`, { method: 'DELETE' });
+    const data = await r.json();
+    if (data.ok) {
+      toast('Edital removido.', 'success');
+      loadEditais();
+    } else {
+      toast(data.error || 'Erro ao remover.', 'error');
+    }
+  } catch (e) {
+    toast('Falha na conexão.', 'error');
+  }
+}
+
+/* ── Run pipeline ───────────────────────────────────────────────────── */
+async function runPipeline() {
+  document.getElementById('run-overlay').classList.add('show');
+  document.getElementById('run-btn').disabled = true;
+
+  try {
+    const r = await fetch('/api/run', { method: 'POST' });
+    const data = await r.json();
+    if (data.ok) {
+      toast(`Pipeline concluído: ${data.found} edital(is) encontrado(s).`, 'success');
+      loadEditais();
+    } else {
+      toast(`Erro no pipeline: ${data.error}`, 'error');
+    }
+  } catch (e) {
+    toast('Falha ao executar pipeline.', 'error');
+  } finally {
+    document.getElementById('run-overlay').classList.remove('show');
+    document.getElementById('run-btn').disabled = false;
+  }
+}
+
+document.getElementById('run-btn').addEventListener('click', runPipeline);
+document.getElementById('sidebar-run-btn').addEventListener('click', (e) => { e.preventDefault(); runPipeline(); });
+
+/* ── Toggles & search ───────────────────────────────────────────────── */
+document.getElementById('toggle-no-deadline').addEventListener('change', loadEditais);
+document.getElementById('refresh-btn').addEventListener('click', loadEditais);
+
+document.getElementById('search-bar').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderEditais();
+});
+
+/* ── Smooth scroll ──────────────────────────────────────────────────── */
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Init ───────────────────────────────────────────────────────────── */
+loadEditais();
+</script>
+</body>
+</html>
