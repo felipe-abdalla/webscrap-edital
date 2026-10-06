@@ -10,9 +10,6 @@ class Edital(SQLModel, table=True):
     url: str = Field(index=True, unique=True)
     content: Optional[str]
 
-    # Corrigido: era `datetime`, mas o DeadlineExtractor retorna e salva `date`.
-    # Usar `date` evita conversões implícitas e inconsistências no banco
-    # (ex.: horário sempre zerado às 00:00:00 sem significado real).
     deadline: Optional[date]
 
     domain: Optional[str]

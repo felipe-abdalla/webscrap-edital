@@ -18,14 +18,6 @@ NEGATIVE_KEYWORDS: Dict[str, int] = {
 
 
 def _word_pattern(keyword: str) -> re.Pattern:
-    """
-    Cria um padrão que respeita fronteiras de palavra para texto em português.
-
-    O \b nativo do Python não reconhece caracteres acentuados como parte de
-    palavra (ex.: "inovação" pode não ser detectado antes de pontuação ou
-    espaço). A solução é usar lookahead/lookbehind negativos que verificam
-    se o caractere adjacente NÃO é alfanumérico (incluindo Unicode).
-    """
     escaped = re.escape(keyword)
     return re.compile(
         rf"(?<![^\W])(?:{escaped})(?![^\W])",

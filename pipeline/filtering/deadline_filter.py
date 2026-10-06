@@ -29,6 +29,10 @@ NEGATIVE_KEYWORDS = [
     "assinatura",
 ]
 
+DEADLINE_KEYWORD_WEIGHT = 2
+NEGATIVE_KEYWORD_WEIGHT = -3
+ATE_WEIGHT = 3
+ENCERRAMENTO_WEIGHT = 4
 
 class DeadlineExtractor:
 
@@ -78,17 +82,17 @@ class DeadlineExtractor:
 
         for keyword in KEYWORDS:
             if keyword in sentence:
-                score += 2
+                score += DEADLINE_KEYWORD_WEIGHT
 
         for keyword in NEGATIVE_KEYWORDS:
             if keyword in sentence:
-                score -= 3
+                score += NEGATIVE_KEYWORD_WEIGHT
 
         if "até" in sentence or "ate" in sentence:
-            score += 3
+            score += ATE_WEIGHT
 
         if "encerramento" in sentence:
-            score += 4
+            score += ENCERRAMENTO_WEIGHT
 
         return score
 

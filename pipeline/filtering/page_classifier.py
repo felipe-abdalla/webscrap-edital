@@ -48,15 +48,6 @@ _DATE_RE = re.compile(r'\d{1,2}/\d{1,2}/\d{2,4}')
 
 
 def is_listing_page(url: str, content: str) -> bool:
-    """
-    Detecta páginas agregadoras (listas de editais) que não devem ser
-    processadas individualmente.
-
-    O conteúdo recebido é texto limpo extraído pelo Tavily — não HTML —
-    portanto a contagem de 'href=' não é aplicável aqui. Em vez disso,
-    contamos links em formato Markdown ([texto](url)), que é como o Tavily
-    representa hiperlinks no texto extraído.
-    """
     url_lower = url.lower()
     content_lower = content.lower()
 

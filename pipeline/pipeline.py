@@ -1,4 +1,4 @@
-import json
+import csv
 
 from domain.edital import Edital
 
@@ -20,6 +20,8 @@ from pipeline.enrichment.content_fetcher import fetch_full_content
 
 from repositories.edital_repository import EditalRepository
 
+SCORE_THRESHOLD = 2
+
 class EditalPipeline:
 
     def __init__(self):
@@ -32,8 +34,9 @@ class EditalPipeline:
     def run(self):
         queries = generate_queries()
         queries = prioritize_queries(queries)
+
         all_results = []
-        score_threshold = 2
+        score_threshold = SCORE_THRESHOLD
         evaluation_log = []
 
         # Search
@@ -65,23 +68,16 @@ class EditalPipeline:
             evaluation_entry = {
                 "url": url,
                 "title": r.get("title"),
-
                 "pipeline_detected": False,
-
                 "relevance_pred": None,
                 "relevance_score": None,
-
                 "deadline_pred": None,
                 "expired_detected": None,
-
                 "used_fallback": False,
                 "reason": None,
-
                 "source_sentence": None,
-
                 "is_edital_real": None,
                 "is_relevant_real": None,
-
                 "deadline_status_real": None
             }
 
@@ -104,13 +100,10 @@ class EditalPipeline:
                 print("[LISTING PAGE]")
 
                 evaluation_entry["pipeline_detected"] = False
-
                 evaluation_entry["relevance_pred"] = None
                 evaluation_entry["relevance_score"] = None
-
                 evaluation_entry["deadline_pred"] = None
                 evaluation_entry["expired_detected"] = None
-
                 evaluation_entry["reason"] = "listing_page"
 
                 evaluation_log.append(evaluation_entry)
@@ -127,7 +120,6 @@ class EditalPipeline:
 
                 evaluation_entry["deadline_pred"] = None
                 evaluation_entry["expired_detected"] = None
-
                 evaluation_entry["reason"] = "not_relevant"
 
                 evaluation_log.append(evaluation_entry)
@@ -142,7 +134,6 @@ class EditalPipeline:
 
                 evaluation_entry["deadline_pred"] = None
                 evaluation_entry["expired_detected"] = None
-
                 evaluation_entry["reason"] = "low_score"
 
                 evaluation_log.append(evaluation_entry)
@@ -165,8 +156,8 @@ class EditalPipeline:
                 deadline = fallback_result["deadline"]
 
                 expired_flag = (
-                    expired_flag or
-                    fallback_result.get("expired", False)
+                    expired_flag 
+                    or fallback_result.get("expired", False)
                 )
 
                 if fallback_result.get("source_sentence"):
@@ -203,6 +194,7 @@ class EditalPipeline:
 
             self.seen_signatures.add(signature)
 
+            # Deduplicação por similaridade
             is_duplicate = False
 
             for existing in self.saved_contents:
@@ -237,7 +229,6 @@ class EditalPipeline:
                 deadline=deadline,
                 domain=domain,
                 score=score,
-                # DEBUG
                 phrase=sentence,
             )
 
@@ -246,15 +237,44 @@ class EditalPipeline:
             
             evaluation_entry["pipeline_detected"] = True
             evaluation_entry["deadline"] = deadline.isoformat()
-            
             evaluation_entry["reason"] = "accepted"
 
             evaluation_log.append(evaluation_entry)
-
             valid_editais.append(edital)
 
+        # Exportação em .TXT formato CSV
+        output_file = "evaluation_raw.txt"
+
+        if evaluation_log:
+            # Obtem os headers
+            fieldnames = []
+
+            for entry in evaluation_log:
+                for key in entry.keys():
+                    if key not in fieldnames:
+                        fieldnames.append(key)
+
+            with open(
+                output_file,
+                "w",
+                newline="",
+                encoding="utf-8"
+            ) as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=fieldnames,
+                    delimiter=",",
+                    extrasaction="ignore"
+                )
+
+                # Header
+                writer.writeheader()
+
+                # Dados
+                writer.writerows(evaluation_log)
+
+        print(f"\nAvaliação salva em: {output_file}")
+
         print(f"Editais válidos: {len(valid_editais)}/{len(unique_results)}")
-        with open("evaluation_raw.json", "w", encoding="utf-8") as f:
-            json.dump(evaluation_log, f, indent=2, ensure_ascii=False)
 
         return valid_editais
