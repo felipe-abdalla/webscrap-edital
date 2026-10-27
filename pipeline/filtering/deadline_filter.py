@@ -36,8 +36,9 @@ ENCERRAMENTO_WEIGHT = 4
 
 class DeadlineExtractor:
 
-    def __init__(self):
-        self.today_datetime = datetime.now()
+    # No replay, "hoje" [e a data da coleta (snapshot), não a data em que o código roda
+    def __init__(self, today: Optional[datetime] = None):
+        self.today_datetime = (today or datetime.now()).replace(tzinfo=None)
         self.today_date = self.today_datetime.date()
 
     # Extrair possíveis candidatos
