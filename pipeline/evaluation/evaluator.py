@@ -10,6 +10,7 @@ LABEL_COLUMNS = [
     "is_listing_real",
     "is_edital_real",
     "is_relevant_real",
+    "deadline_real",
     "deadline_status_real",
 ]
 

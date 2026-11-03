@@ -10,7 +10,7 @@ DATASETS_DIR = Path("datasets")
 _TRACKED_LIBS = ["dateparser", "beautifulsoup4", "requests"]
 
 def _guess_extension(content_type: str, body: bytes) -> str:
-    if body[:4] == b"%PDF" or "applicaiton/pdf" in content_type:
+    if body[:4] == b"%PDF" or "application/pdf" in content_type:
         return ".pdf"
     if "html" in content_type:
         return ".html"
@@ -75,7 +75,7 @@ def save_snapshot(run_dir: Path, run_at: datetime, queries: list[str], items: li
     manifest = {
         "run_at": run_at.isoformat(),
         "git_commit": _git_commit(),
-        "lib_verisons": _lib_versions(),
+        "lib_versions": _lib_versions(),
         "queries": queries,
         "config": config,
         "items": stored_items,

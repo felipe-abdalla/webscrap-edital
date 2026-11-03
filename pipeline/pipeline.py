@@ -21,6 +21,8 @@ from pipeline.filtering.page_classifier import is_listing_page
 from pipeline.enrichment.metadata_extractor import extract_domain
 from pipeline.enrichment.content_fetcher import fetch_raw, extract_text
 
+from pipeline.snapshot import new_run_dir, save_snapshot, read_raw
+
 from repositories.edital_repository import EditalRepository
 
 from utils.url_utils import url_id
@@ -301,7 +303,7 @@ class EditalPipeline:
 
         return valid_editais
 
-    def _write_evaluation_log(self, evaluation_log: list[disct], output_file: Path):
+    def _write_evaluation_log(self, evaluation_log: list[dict], output_file: Path):
         if not evaluation_log:
             return
 

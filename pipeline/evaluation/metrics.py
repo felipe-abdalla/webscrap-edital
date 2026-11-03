@@ -1,5 +1,5 @@
 def confusion(y_true: list[bool], y_pred: list[bool]) -> dict:
-    confusion = {"tp": 0, "fp": 0, "tn": 0}
+    confusion = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
 
     for true, pred in zip(y_true, y_pred):
         if pred and true:
