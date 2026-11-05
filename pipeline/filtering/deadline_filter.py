@@ -7,13 +7,9 @@ import dateparser
 
 class DeadlineExtractor:
 
+    # No replay, "hoje" é a data da coleta (snapshot), não a data em que o código roda
     def __init__(self, today: Optional[datetime] = None, cfg: DeadlineConfig = DEFAULT.deadline):
         self.cfg = cfg
-        self.today_datetime = (today or datetime.now()).replace(tzinfo=None)
-        self.today_date = self.today_datetime.date()
-
-    # No replay, "hoje" [e a data da coleta (snapshot), não a data em que o código roda
-    def __init__(self, today: Optional[datetime] = None):
         self.today_datetime = (today or datetime.now()).replace(tzinfo=None)
         self.today_date = self.today_datetime.date()
 
