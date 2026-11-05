@@ -1,7 +1,7 @@
 import hashlib
 import re
 
-def generate_signature(text: str) -> str:
+def generate_signature(text: str, window: int = 1000) -> str:
     if not text:
         return ""
     
@@ -9,6 +9,6 @@ def generate_signature(text: str) -> str:
     text = text.lower()
     text = re.sub(r'\s+', ' ', text)
 
-    snippet = text[:1000]
+    snippet = text[:window]
 
     return hashlib.md5(snippet.encode()).hexdigest()

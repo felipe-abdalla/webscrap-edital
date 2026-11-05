@@ -1,40 +1,16 @@
 import re
 from datetime import datetime
 from typing import List, Optional, Dict
+from config.heuristics import DEFAULT, DeadlineConfig
 
 import dateparser
 
-KEYWORDS = [
-    "prazo",
-    "inscrições", "inscrição",
-    "submissão", "submissao",
-    "até", "ate",
-    "deadline",
-    "data limite",
-    "encerramento",
-    "período", "periodo",
-    "vigência", "vigencia",
-    "cronograma",
-    "datas importantes",
-    "envio",
-    "abertas"
-]
-
-NEGATIVE_KEYWORDS = [
-    "resultado",
-    "resultado final",
-    "divulgação",
-    "homologação",
-    "publicado",
-    "assinatura",
-]
-
-DEADLINE_KEYWORD_WEIGHT = 2
-NEGATIVE_KEYWORD_WEIGHT = -3
-ATE_WEIGHT = 3
-ENCERRAMENTO_WEIGHT = 4
-
 class DeadlineExtractor:
+
+    def __init__(self, today: Optional[datetime] = None, cfg: DeadlineConfig = DEFAULT.deadline):
+        self.cfg = cfg
+        self.today_datetime = (today or datetime.now()).replace(tzinfo=None)
+        self.today_date = self.today_datetime.date()
 
     # No replay, "hoje" [e a data da coleta (snapshot), não a data em que o código roda
     def __init__(self, today: Optional[datetime] = None):
@@ -48,7 +24,7 @@ class DeadlineExtractor:
         return [
             s.strip()
             for s in sentences
-            if any(keyword in s for keyword in KEYWORDS)
+            if any(keyword in s for keyword in self.cfg.keywords)
         ]
 
     # Extrair datas com NLP
@@ -81,19 +57,19 @@ class DeadlineExtractor:
     def score_sentence(self, sentence: str) -> int:
         score = 0
 
-        for keyword in KEYWORDS:
+        for keyword in self.cfg.keywords:
             if keyword in sentence:
-                score += DEADLINE_KEYWORD_WEIGHT
+                score += self.cfg.keyword_weight
 
-        for keyword in NEGATIVE_KEYWORDS:
+        for keyword in self.cfg.negative_keywords:
             if keyword in sentence:
-                score += NEGATIVE_KEYWORD_WEIGHT
+                score += self.cfg.negative_keyword_weight
 
         if "até" in sentence or "ate" in sentence:
-            score += ATE_WEIGHT
+            score += self.cfg.ate_weight
 
         if "encerramento" in sentence:
-            score += ENCERRAMENTO_WEIGHT
+            score += self.cfg.encerramento_weight
 
         return score
 
@@ -101,10 +77,10 @@ class DeadlineExtractor:
     def normalize_year(self, date: datetime) -> datetime:
         current_year = self.today_date.year
 
-        if date.year > current_year + 10:
+        if date.year > current_year + self.cfg.year_window:
             return date.replace(year=date.year - 100)
 
-        if date.year < current_year - 10:
+        if date.year < current_year - self.cfg.year_window:
             return date.replace(year=date.year + 100)
 
         return date
@@ -122,7 +98,7 @@ class DeadlineExtractor:
                 parsed_date = self.normalize_year(parsed_date)
                 score = self.score_sentence(sentence)
 
-                if score <= 0:
+                if score <= self.cfg.min_sentence_score:
                     continue
 
                 # Deadline expirado
@@ -148,7 +124,7 @@ class DeadlineExtractor:
                         expired_found = True
                         continue
 
-                    scored_dates.append((parsed_date, 1, match))
+                    scored_dates.append((parsed_date, self.cfg.regex_fallback_score, match))
 
         # Nenhuma válida encontrada
         if not scored_dates:

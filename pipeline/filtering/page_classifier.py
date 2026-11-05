@@ -1,44 +1,6 @@
 import re
+from config.heuristics import DEFAULT, ListingConfig
 
-LISTING_KEYWORDS = [
-    "editais",
-    "oportunidades",
-    "noticias",
-    "notícias",
-    "chamadas",
-    "bolsas",
-    "programas",
-    "arquivo",
-    "resultados",
-    "catalogo",
-    "catálogo",
-    "lista",
-    "todas-as-chamadas",
-    "todas-as-oportunidades",
-]
-
-DETAIL_KEYWORDS = [
-    "chamada pública",
-    "edital",
-    "nº",
-    "numero",
-    "inscrição",
-    "prazo",
-    "submissão",
-    "cronograma",
-]
-
-LISTING_URL_PATTERNS = [
-    "/noticias/",
-    "/notícias/",
-    "/oportunidades/",
-    "/editais-2026",
-    "/editais/",
-    "/chamadas/",
-    "/bolsas/",
-    "/programas/",
-    "/resultados/",
-]
 
 # Padrão de URL markdown: [texto](https://...) — indica página agregadora
 _MARKDOWN_LINK_RE = re.compile(r'\[([^\]]+)\]\(https?://[^\)]+\)')
@@ -46,42 +8,44 @@ _MARKDOWN_LINK_RE = re.compile(r'\[([^\]]+)\]\(https?://[^\)]+\)')
 # Datas no formato dd/mm/aaaa ou dd/mm/aa
 _DATE_RE = re.compile(r'\d{1,2}/\d{1,2}/\d{2,4}')
 
-
-def is_listing_page(url: str, content: str) -> bool:
+def listing_score(url: str, content: str, cfg: ListingConfig = DEFAULT.listing) -> int:
     url_lower = url.lower()
     content_lower = content.lower()
 
     listing_score = 0
 
     # Heurística por URL
-    if any(k in url_lower for k in LISTING_KEYWORDS):
-        listing_score += 2
-    if any(p in url_lower for p in LISTING_URL_PATTERNS):
-        listing_score += 3
+    if any(k in url_lower for k in cfg.url_keywords):
+        listing_score += cfg.url_keyword_weight
+    if any(p in url_lower for p in cfg.url_patterns):
+        listing_score += cfg.url_pattern_weight
 
-    # Links em formato Markdown no conteúdo (indicativo de lista)
+    # Links em formato Markdown no conteúdo
     link_count = len(_MARKDOWN_LINK_RE.findall(content))
-    if link_count > 10:
-        listing_score += 2
-    if link_count > 25:
-        listing_score += 2
+    if link_count > cfg.link_low:
+        listing_score += cfg.link_weight
+    if link_count > cfg.link_high:
+        listing_score += cfg.link_weight
 
-    # Muitas datas — provável calendário ou lista
+    # Quantidade de dadas em excesso
     date_matches = _DATE_RE.findall(content_lower)
-    if len(date_matches) > 5:
-        listing_score += 2
-    if len(date_matches) > 10:
-        listing_score += 2
+    if len(date_matches) > cfg.date_low:
+        listing_score += cfg.date_weight
+    if len(date_matches) > cfg.date_high:
+        listing_score += cfg.date_weight
 
     # Poucas palavras-chave de edital individual
-    detail_hits = sum(content_lower.count(k) for k in DETAIL_KEYWORDS)
-    if detail_hits < 2:
-        listing_score += 2
+    detail_hits = sum(content_lower.count(k) for k in cfg.detail_keywords)
+    if detail_hits < cfg.min_detail_hits:
+        listing_score += cfg.low_detail_weight
 
     # Plurais indicativos de listagem
     if "editais" in content_lower:
-        listing_score += 1
+        listing_score += cfg.plural_editais_weight
     if "chamadas públicas" in content_lower:
-        listing_score += 1
+        listing_score += cfg.plural_chamadas_weight
 
-    return listing_score >= 5
+    return listing_score
+
+def is_listing_page(url: str, content: str, cfg: ListingConfig = DEFAULT.listing) -> bool:
+    return listing_score(url, content, cfg) >= cfg.threshold

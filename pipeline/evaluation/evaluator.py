@@ -51,7 +51,7 @@ def init_labels(run_dir: Path, predictions: list[dict]) -> Path:
 
     with open(path, "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["id", "url", "title", *LABEL_COLUMNS, "deadline_real", "observacao"])
+        writer.writerow(["id", "url", "title", *LABEL_COLUMNS, "observacao"])
 
         for p in predictions:
             writer.writerow([p["id"], p["url"], p["title"], *[""] * len(LABEL_COLUMNS), "", ""])

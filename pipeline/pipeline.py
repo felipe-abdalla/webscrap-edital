@@ -13,7 +13,6 @@ from pipeline.processing.deduplicator import deduplicate
 from pipeline.processing.content_signature import generate_signature
 from pipeline.processing.similarity import jaccard_similarity
 
-from pipeline.filtering import deadline_filter, relevance_filter
 from pipeline.filtering.deadline_filter import DeadlineExtractor
 from pipeline.filtering.relevance_filter import RelevanceFilter
 from pipeline.filtering.page_classifier import is_listing_page
@@ -27,32 +26,17 @@ from repositories.edital_repository import EditalRepository
 
 from utils.url_utils import url_id
 
+from config.heuristics import DEFAULT, HeuristicConfig
+
 MAX_RAW_RESULTS = 50
-RELEVANCE_THRESHOLD = 3
-SCORE_THRESHOLD = 2
-
-def current_config() -> dict:
-    """Pesos e limiares vigentes, gravados no manifest de cada coleta"""
-
-    return {
-        "relevance_threshold": RELEVANCE_THRESHOLD,
-        "score_threshold": SCORE_THRESHOLD,
-        "relevance_keywords": relevance_filter.KEYWORDS,
-        "relevance_negative_keywords": relevance_filter.NEGATIVE_KEYWORDS,
-        "deadline_keywords": deadline_filter.KEYWORDS,
-        "deadline_negative_keywords": deadline_filter.NEGATIVE_KEYWORDS,
-        "deadline_keyword_weight": deadline_filter.DEADLINE_KEYWORD_WEIGHT,
-        "deadline_negative_keyword_weight": deadline_filter.NEGATIVE_KEYWORD_WEIGHT,
-        "ate_weight": deadline_filter.ATE_WEIGHT,
-        "encerramento_weight": deadline_filter.ENCERRAMENTO_WEIGHT,
-    }
 
 class EditalPipeline:
 
-    def __init__(self, persist: bool = True):
+    def __init__(self, persist: bool = True, cfg: HeuristicConfig = DEFAULT):
+        self.cfg = cfg
         self.persist = persist
         self.repository = EditalRepository() if persist else None
-        self.relevance_filter = RelevanceFilter()
+        self.relevance_filter = RelevanceFilter(cfg.relevance)
 
     def run(self):
         return self.process(self.collect())
@@ -107,14 +91,16 @@ class EditalPipeline:
             })
 
         return save_snapshot(
-            new_run_dir(run_at), run_at, executed_queries, items, current_config()
+            new_run_dir(run_at), run_at, executed_queries, items, self.cfg.to_dict()
         )
 
     # PROCESSAMENTO
-    def process(self, snapshot: dict) -> list[Edital]:
+    def process(self, snapshot: dict, output_file: Path | None = None) -> list[Edital]:
         run_dir: Path = snapshot["run_dir"]
+        output_file = output_file or run_dir / "predictions.csv"
+        cfg = self.cfg
 
-        deadline_extractor = DeadlineExtractor(today=snapshot["run_at"])
+        deadline_extractor = DeadlineExtractor(today=snapshot["run_at"], cfg=cfg.deadline)
         seen_signatures = set()
         saved_contents = []
 
@@ -156,7 +142,7 @@ class EditalPipeline:
             print(f"[URL]: {url}")
 
             # Detecta páginas agregadoras
-            if is_listing_page(url, content):
+            if is_listing_page(url, content, cfg.listing):
                 print("[LISTING PAGE]")
 
                 evaluation_entry["reason"] = "listing_page"
@@ -165,9 +151,7 @@ class EditalPipeline:
                 continue
 
             # Relevância
-            relevance = self.relevance_filter.is_relevant(
-                content, threshold=RELEVANCE_THRESHOLD
-            )
+            relevance = self.relevance_filter.is_relevant(content)
 
             evaluation_entry["relevance_pred"] = relevance["is_relevant"]
             evaluation_entry["relevance_score"] = relevance["score"]
@@ -183,7 +167,7 @@ class EditalPipeline:
             score = relevance["score"]
             print(f"[SCORE]: {score}")
 
-            if score < SCORE_THRESHOLD:
+            if score < cfg.relevance.score_threshold:
                 print("[LOW SCORE]")
 
                 evaluation_entry["reason"] = "low_score"
@@ -201,7 +185,7 @@ class EditalPipeline:
 
             # FALLBACK
             if not deadline:
-                fallback_result = deadline_extractor.extract_deadline(content[:2000])
+                fallback_result = deadline_extractor.extract_deadline(content[:cfg.deadline.fallback_window])
 
                 evaluation_entry["used_fallback"] = True
 
@@ -233,7 +217,7 @@ class EditalPipeline:
                 continue
 
             # Deduplicação por assinatura hash
-            signature = generate_signature(content)
+            signature = generate_signature(content, cfg.dedup.signature_window)
 
             if signature in seen_signatures:
                 print("[DUPLICATE SIGNATURE]")
@@ -249,9 +233,10 @@ class EditalPipeline:
             is_duplicate = False
 
             for existing in saved_contents:
-                sim = jaccard_similarity(content[:1000], existing[:1000])
+                w = cfg.dedup.jaccard_window
+                sim = jaccard_similarity(content[:w], existing[:w])
 
-                if sim > 0.8:
+                if sim > cfg.dedup.jaccard_threshold:
                     print(f"[DUPLICATE (SIMILARITY {sim:.2f})]")
 
                     evaluation_entry["reason"] = f"duplicate_similarity_{sim:.2f}"
@@ -295,7 +280,6 @@ class EditalPipeline:
             evaluation_log.append(evaluation_entry)
             valid_editais.append(edital)
 
-        output_file = run_dir / "predictions.csv"
         self._write_evaluation_log(evaluation_log, output_file)
 
         print(f"\nAvaliação salva em: {output_file}")

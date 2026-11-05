@@ -1,21 +1,6 @@
 import re
 from typing import Dict, Tuple
-
-KEYWORDS: Dict[str, int] = {
-    "edital": 3,
-    "chamada pública": 3,
-    "financiamento": 2,
-    "inovação": 2,
-    "incentivo": 2,
-}
-
-NEGATIVE_KEYWORDS: Dict[str, int] = {
-    "resultado": -2,
-    "publicado": -1,
-    "notícia": -2,
-    "evento": -1,
-}
-
+from config.heuristics import DEFAULT, RelevanceConfig
 
 def _word_pattern(keyword: str) -> re.Pattern:
     escaped = re.escape(keyword)
@@ -24,27 +9,20 @@ def _word_pattern(keyword: str) -> re.Pattern:
         re.IGNORECASE | re.UNICODE,
     )
 
-
-# Pré-compila os padrões uma única vez para eficiência
-_KEYWORD_PATTERNS: Dict[str, Tuple[re.Pattern, int]] = {
-    kw: (_word_pattern(kw), weight) for kw, weight in KEYWORDS.items()
-}
-
-_NEGATIVE_PATTERNS: Dict[str, Tuple[re.Pattern, int]] = {
-    kw: (_word_pattern(kw), weight) for kw, weight in NEGATIVE_KEYWORDS.items()
-}
-
+def _compile(keywords: Dict[str, int]) -> Dict[str, Tuple[re.Pattern, int]]:
+    return {kw: (_word_pattern(kw), weight) for kw, weight in keywords.items()}
 
 class RelevanceFilter:
+
+    def __init__(self, cfg: RelevanceConfig = DEFAULT.relevance):
+        self.cfg = cfg
+        self.keyword_patterns = _compile(cfg.keywords)
+        self.negative_patterns = _compile(cfg.negative_keywords)
 
     def normalize_text(self, text: str) -> str:
         return text.lower()
 
-    def count_keywords(
-        self,
-        text: str,
-        patterns: Dict[str, Tuple[re.Pattern, int]],
-    ) -> int:
+    def count_keywords(self, text: str, patterns: Dict[str, Tuple[re.Pattern, int]]) -> int:
         score = 0
         for _kw, (pattern, weight) in patterns.items():
             matches = pattern.findall(text)
@@ -60,33 +38,32 @@ class RelevanceFilter:
 
         keyword_hits = sum(
             len(pattern.findall(text))
-            for _kw, (pattern, _weight) in _KEYWORD_PATTERNS.items()
+            for _kw, (pattern, _weight) in self.keyword_patterns.items()
         )
-
         density = keyword_hits / total_words
 
-        if density > 0.05:
-            return 3
-        elif density > 0.02:
-            return 1
+        if density > self.cfg.density_high:
+            return self.cfg.density_high_bonus
+        elif density > self.cfg.density_low:
+            return self.cfg.density_low_bonus
 
         return 0
 
     def calculate_score(self, text: str) -> int:
         text = self.normalize_text(text)
 
-        positive_score = self.count_keywords(text, _KEYWORD_PATTERNS)
-        negative_score = self.count_keywords(text, _NEGATIVE_PATTERNS)
+        positive_score = self.count_keywords(text, self.keyword_patterns)
+        negative_score = self.count_keywords(text, self.negative_patterns)
         density_bonus = self.keyword_density_bonus(text)
 
         return positive_score + negative_score + density_bonus
 
-    def is_relevant(self, text: str, threshold: int = 3) -> Dict:
+    def is_relevant(self, text: str) -> Dict:
         score = self.calculate_score(text)
         confidence = min(1.0, score / 10)
 
         return {
-            "is_relevant": score >= threshold,
+            "is_relevant": score >= self.cfg.threshold,
             "score": score,
             "confidence": confidence,
         }
