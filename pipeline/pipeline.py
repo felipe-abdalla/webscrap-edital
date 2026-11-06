@@ -30,6 +30,42 @@ from config.heuristics import DEFAULT, HeuristicConfig
 
 MAX_RAW_RESULTS = 50
 
+def item_content(run_dir: Path, item: dict) -> tuple[str, str]:
+    """Texto usado nas heurísticas"""
+
+    content = item["snippet"]
+    full_content = extract_text(read_raw(run_dir, item))
+
+    if len(full_content) > len(content):
+        return full_content, "full"
+
+    return content, "snippet"
+
+def find_deadline(extractor: DeadlineExtractor, content: str, fallback_window: int) -> dict:
+    result = extractor.extract_deadline(content)
+
+    found = {
+        "deadline": result["deadline"],
+        "expired": result.get("expired", False),
+        "source_sentence": result.get("source_sentence"),
+        "best_any_date": result.get("best_any_date"),
+        "used_fallback": False,
+    }
+
+    # FALLBACK
+    if not found["deadline"]:
+        fallback = extractor.extract_deadline(content[:fallback_window])
+
+        found["used_fallback"] = True
+        found["deadline"] = fallback["deadline"]
+        found["expired"] = found["expired"] or fallback.get("expired", False)
+        found["best_any_date"] = found["best_any_date"] or fallback.get("best_any_date")
+
+        if fallback.get("source_sentence"):
+            found["source_sentence"] = fallback["source_sentence"]
+
+    return found
+
 class EditalPipeline:
 
     def __init__(self, persist: bool = True, cfg: HeuristicConfig = DEFAULT):
@@ -109,7 +145,6 @@ class EditalPipeline:
 
         for item in snapshot["items"]:
             url = item["url"]
-            content = item["snippet"]
 
             evaluation_entry = {
                 "id": item["id"],
@@ -126,11 +161,7 @@ class EditalPipeline:
                 "source_sentence": None,
             }
 
-            full_content = extract_text(read_raw(run_dir, item))
-
-            if len(full_content) > len(content):
-                content = full_content
-                evaluation_entry["content_source"] = "full"
+            content, evaluation_entry["content_source"] = item_content(run_dir, item)
 
             # Evita duplicados no banco
             if self.persist and self.repository.exists_by_url(url):
@@ -176,28 +207,13 @@ class EditalPipeline:
                 continue
 
             # Deadline
-            result = deadline_extractor.extract_deadline(content)
+            found = find_deadline(deadline_extractor, content, cfg.deadline.fallback_window)
 
-            deadline = result["deadline"]
-            expired_flag = result.get("expired", False)
+            deadline = found["deadline"]
+            expired_flag = found["expired"]
 
-            evaluation_entry["source_sentence"] = result.get("source_sentence")
-
-            # FALLBACK
-            if not deadline:
-                fallback_result = deadline_extractor.extract_deadline(content[:cfg.deadline.fallback_window])
-
-                evaluation_entry["used_fallback"] = True
-
-                deadline = fallback_result["deadline"]
-
-                expired_flag = (
-                    expired_flag
-                    or fallback_result.get("expired", False)
-                )
-
-                if fallback_result.get("source_sentence"):
-                    evaluation_entry["source_sentence"] = fallback_result.get("source_sentence")
+            evaluation_entry["source_sentence"] = found["source_sentence"]
+            evaluation_entry["used_fallback"] = found["used_fallback"]
 
             evaluation_entry["deadline_pred"] = deadline is not None
             evaluation_entry["expired_detected"] = expired_flag

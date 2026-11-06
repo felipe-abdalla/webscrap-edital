@@ -85,6 +85,7 @@ class DeadlineExtractor:
     def extract_deadline(self, text: str) -> Dict:
         candidates = self.extract_candidate_sentences(text)
         scored_dates = []
+        all_dates = []
         expired_found = False
 
         for sentence in candidates:
@@ -96,7 +97,9 @@ class DeadlineExtractor:
 
                 if score <= self.cfg.min_sentence_score:
                     continue
-
+                
+                all_dates.append((parsed_date, score, sentence))
+                
                 # Deadline expirado
                 if parsed_date.date() < self.today_date:
                     print("[INSCRIÇÕES ENCERRADAS]")
@@ -114,6 +117,7 @@ class DeadlineExtractor:
 
                 if parsed_date:
                     parsed_date = self.normalize_year(parsed_date)
+                    all_dates.append((parsed_date, self.cfg.regex_fallback_score, match))
 
                     # Também ignora expiradas no fallback
                     if parsed_date.date() < self.today_date:
@@ -124,20 +128,23 @@ class DeadlineExtractor:
 
         # Nenhuma válida encontrada
         if not scored_dates:
+            best_any_date = max(all_dates, key=lambda x: x[1])[0].date() if all_dates else None
 
             if expired_found:
                 return {
                     "deadline": None,
                     "score": 0,
                     "confidence": 0.0,
-                    "expired": True
+                    "expired": True,
+                    "best_any_date": best_any_date
                 }
 
             return {
                 "deadline": None,
                 "score": 0,
                 "confidence": 0.0,
-                "expired": False
+                "expired": False,
+                "best_any_date": best_any_date
             }
 
         best_date, best_score, best_sentence = max(
@@ -147,10 +154,13 @@ class DeadlineExtractor:
 
         confidence = min(1.0, best_score / 10)
 
+        best_any_date = max(all_dates, key=lambda x: x[1])[0].date() if all_dates else None
+
         return {
             "deadline": best_date.date(),
             "score": best_score,
             "confidence": confidence,
             "source_sentence": best_sentence,
-            "expired": False
+            "expired": False,
+            "best_any_date": best_any_date
         }

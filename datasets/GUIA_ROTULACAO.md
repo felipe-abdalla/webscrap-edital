@@ -12,7 +12,7 @@ is_relevant_real
 É relevante para os parâmetros do sistema (tecnologia e inovação)?
 
 deadline_real
-Existe prazo de inscrição explícito na página?
+Existe prazo de inscrição explícito na página? formato AAAA-MM-DD, vazio se não houver
 
 deadline_status_real    
 A inscrição estava aberta durante a data da coleta?

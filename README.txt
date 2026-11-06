@@ -29,4 +29,9 @@ docker logs -f postgres-editais
 ## Testar conexão
 docker exec -it postgres-editais psql -U postgres -d editais_db
 
+## Teste de regressão
+python -c "from pathlib import Path; from pipeline.snapshot import load_snapshot; from pipeline.pipeline import EditalPipeline; EditalPipeline(persist=False).process(load_snapshot('datasets/run_2026-10-27T17-50-29'), Path('refactor_predictions.csv'))"
+python -c "import filecmp; print('IDENTICO' if filecmp.cmp('datasets/run_2026-10-27T17-50-29/predictions.csv','refactor_predictions.csv',shallow=False) else 'DIFERENTE')"
+Remove-Item refactor_predictions.csv
+
 ## RECOMENDAÇÃO: Usar DBeaver para visualização de tabelas do banco de dados
