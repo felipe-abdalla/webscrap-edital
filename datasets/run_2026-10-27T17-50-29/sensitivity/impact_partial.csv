@@ -1,0 +1,3 @@
+﻿param,metric,current,suggested,metric_current,metric_suggested,lost_current,lost_suggested,wrong_current,wrong_suggested,amplitude,amplitude_e2e
+listing.threshold,listing.f05,5,4,0.5319148936170213,0.5392156862745099,7,7,2,2,0.5737704918032787,0.5
+listing.url_pattern_weight,listing.f05,3,0,0.5319148936170213,0.5714285714285715,7,3,2,2,0.048172757475083094,0.0

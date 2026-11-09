@@ -29,9 +29,11 @@ def _pred(value: str | None) -> bool:
     return parse_bool(value) is True
 
 def _deadline_label(l: dict) -> bool | None:
-    if l["is_edital_real"] is False or l["deadline_real"] is False:
+    if l["is_edital_real"] is False:
         return False
-    return l["deadline_status_real"]
+    if l["deadline_status_real"] is not None:
+        return l["deadline_status_real"]
+    return False if l["deadline_real"] is False else None
 
 def _end_to_end_label(l: dict) -> bool | None:
     if l["is_edital_real"] is False:
