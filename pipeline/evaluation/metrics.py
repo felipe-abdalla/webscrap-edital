@@ -33,5 +33,6 @@ def summarize(c: dict) -> dict:
         "precision": precision(c),
         "recall": recall(c),
         "f1": f_beta(c, 1.0),
-        "f2": f_beta(c, 2.0)
+        "f2": f_beta(c, 2.0),
+        "f05": f_beta(c, 0.5),
     }

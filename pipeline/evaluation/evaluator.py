@@ -28,17 +28,24 @@ def parse_bool(value: str | None) -> bool | None:
 def _pred(value: str | None) -> bool:
     return parse_bool(value) is True
 
+def _deadline_label(l: dict) -> bool | None:
+    if l["is_edital_real"] is False or l["deadline_real"] is False:
+        return False
+    return l["deadline_status_real"]
+
 def _end_to_end_label(l: dict) -> bool | None:
-    parts = [l["is_edital_real"], l["is_relevant_real"], l["deadline_status_real"]]
+    if l["is_edital_real"] is False:
+        return False
+    parts = [l["is_relevant_real"], _deadline_label(l)]
     return None if None in parts else all(parts)
 
 # nome -> (predição a partir de predictions.csv, rótulo a partir de labels.csv)
 TASKS = {
     "listing": (lambda p: p["reason"] == "listing_page", lambda l: l["is_listing_real"]),
     "relevance": (lambda p: _pred(p["relevance_pred"]), lambda l: l["is_relevant_real"]),
-    "deadline": (lambda p: _pred(p["deadline_pred"]), lambda l: l["deadline_status_real"]),
     "is_edital": (lambda p: _pred(p["pipeline_detected"]), lambda l: l["is_edital_real"]),
     "end_to_end": (lambda p: _pred(p["pipeline_detected"]), _end_to_end_label),
+    "deadline": (lambda p: _pred(p["deadline_pred"]), _deadline_label),
 }
 
 def _read_csv(path: Path) -> list[dict]:

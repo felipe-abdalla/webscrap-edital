@@ -1,6 +1,5 @@
 Resposta positiva: "yes"
 Resposta negativa: "no"
-is_edital_real é mutualmente exclusiva com is_listing_real
 
 is_listing_real         
 A página lista vários editais ou chamadas?
@@ -12,7 +11,13 @@ is_relevant_real
 É relevante para os parâmetros do sistema (tecnologia e inovação)?
 
 deadline_real
-Existe prazo de inscrição explícito na página? formato AAAA-MM-DD, vazio se não houver
+Existe prazo de inscrição explícito na página?
 
 deadline_status_real    
 A inscrição estava aberta durante a data da coleta?
+
+deadline_date_real
+Data máxima de inscrição (formato AAAA-MM-DD). Vazio se não houver
+
+is_edital_real é mutualmente exclusiva com is_listing_real
+deadline_real=no e deadline_status_real=yes significa que é um edital/chamado em aberto sem data explícita

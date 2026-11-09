@@ -18,6 +18,8 @@ def generate_queries() -> list[str]:
         "chamada pública",
         "bolsa pesquisa",
         "financiamento inovação",
+        "inscrições abertas",
+        "chamada aberta",
     ]
 
     domains = [

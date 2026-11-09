@@ -6,7 +6,7 @@ from datetime import date
 from pathlib import Path
 
 from config.heuristics import DEFAULT, HeuristicConfig
-from pipeline.evaluation.evaluator import LABEL_COLUMNS, _read_csv, parse_bool
+from pipeline.evaluation.evaluator import LABEL_COLUMNS, _read_csv, parse_bool, _end_to_end_label
 from pipeline.evaluation.metrics import confusion, summarize
 from pipeline.filtering.deadline_filter import DeadlineExtractor
 from pipeline.filtering.page_classifier import listing_score
@@ -14,15 +14,18 @@ from pipeline.filtering.relevance_filter import RelevanceFilter
 from pipeline.pipeline import find_deadline, item_content
 from pipeline.snapshot import load_snapshot
 
-def extract_features(snapshot: dict, cfg: HeuristicConfig = DEFAULT) -> list[dict]:
-    run_dir = snapshot["run_dir"]
+def load_contents(snapshot: dict) -> dict[str, tuple[str, str]]:
+    return {item["id"]: item_content(snapshot["run_dir"], item) for item in snapshot["items"]}
+
+def extract_features(snapshot: dict, cfg: HeuristicConfig = DEFAULT, contents: dict | None = None) -> list[dict]:
+    contents = contents or load_contents(snapshot)
     relevance = RelevanceFilter(cfg.relevance)
     extractor = DeadlineExtractor(today=snapshot["run_at"], cfg=cfg.deadline)
 
     features = []
 
     for item in snapshot["items"]:
-        content, source = item_content(run_dir, item)
+        content, source = contents[item["id"]]
         found = find_deadline(extractor, content, cfg.deadline.fallback_window)
 
         features.append({
@@ -48,6 +51,16 @@ def load_labels(run_dir: Path) -> dict:
         labels[row["id"]] = label
 
     return labels
+
+def pipeline_accepts(f: dict, cfg: HeuristicConfig) -> bool:
+    """Reproduz a cadeia de filtros do process() a partir das features, sem deduplicação"""
+
+    return (
+        f["listing_score"] < cfg.listing.threshold
+        and f["relevance_score"] >= cfg.relevance.threshold
+        and f["relevance_score"] >= cfg.relevance.score_threshold
+        and f["deadline"] is not None
+    )
 
 def _binary(pairs: list[tuple[bool, bool]]) -> dict:
     y_true = [t for t, _ in pairs]
@@ -80,8 +93,18 @@ def evaluate_stages(features: list[dict], labels: dict, cfg: HeuristicConfig = D
 
     dated = [(f, l) for f, l in editais if l["deadline_date_real"]]
     hits = sum(f["best_any_date"] == l["deadline_date_real"] for f, l in dated)
-    results["deadline_date"] = {"n": len(dated), "hits": hits,
-                                "accuracy": hits / len(dated) if dated else 0.0}
+    results["deadline_date"] = {"n": len(dated), "hits": hits, "accuracy": hits / len(dated) if dated else 0.0}
+    lost = sum(f["listing_score"] >= cfg.listing.threshold for f, _ in editais)
+    results["editais_perdidos"] = {"n": len(editais), "lost": lost}
+
+    results["end_to_end"] = _binary([
+        (_end_to_end_label(l), pipeline_accepts(f, cfg))
+        for f, l in rows if _end_to_end_label(l) is not None
+    ])
+
+    accepted = [(f, l) for f, l in rows if pipeline_accepts(f, cfg)]
+    right = sum(f["deadline"] == l["deadline_date_real"] for f, l in accepted)
+    results["aceitos_data_certa"] = {"n": len(accepted), "hits": right, "accuracy": right / len(accepted) if accepted else 0.0}
 
     return results
 
@@ -101,10 +124,12 @@ def main():
 
     for stage, m in results.items():
         if "accuracy" in m:
-            print(f"{stage:<16} n={m['n']:<3} acertos={m['hits']} acc={m['accuracy']:.3f}")
+            print(f"{stage:<18} n={m['n']:<3} acertos={m['hits']} acc={m['accuracy']:.3f}")
+        elif "lost" in m:
+            print(f"{stage:<18} n={m['n']:<3} perdidos={m['lost']}")
         else:
-            print(f"{stage:<16} n={m['n']:<3} P={m['precision']:.3f} "
-                  f"R={m['recall']:.3f} F1={m['f1']:.3f} F2={m['f2']:.3f}")
+            print(f"{stage:<18} n={m['n']:<3} P={m['precision']:.3f} R={m['recall']:.3f} "
+                  f"F0.5={m['f05']:.3f} F1={m['f1']:.3f} F2={m['f2']:.3f}")
 
 if __name__ == "__main__":
     main()

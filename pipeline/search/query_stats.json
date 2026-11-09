@@ -1,15 +1,15 @@
 {
   "edital site:cnpq.br 2026": {
-    "score": 39,
-    "uses": 13
+    "score": 47,
+    "uses": 14
   },
   "edital site:gov.br 2026": {
-    "score": 175,
-    "uses": 19
+    "score": 187,
+    "uses": 20
   },
   "edital site:capes.gov.br 2026": {
-    "score": 100,
-    "uses": 17
+    "score": 101,
+    "uses": 18
   },
   "bolsa pesquisa site:capes.gov.br 2026": {
     "score": 20,
@@ -32,20 +32,20 @@
     "uses": 12
   },
   "chamada p\u00fablica site:fapesp.br 2026": {
-    "score": 72,
-    "uses": 19
-  },
-  "bolsa pesquisa site:cnpq.br 2026": {
-    "score": 30,
-    "uses": 13
-  },
-  "chamada p\u00fablica site:gov.br 2026": {
-    "score": 114,
+    "score": 78,
     "uses": 20
   },
+  "bolsa pesquisa site:cnpq.br 2026": {
+    "score": 36,
+    "uses": 14
+  },
+  "chamada p\u00fablica site:gov.br 2026": {
+    "score": 123,
+    "uses": 21
+  },
   "financiamento inova\u00e7\u00e3o site:gov.br 2026": {
-    "score": 71,
-    "uses": 18
+    "score": 79,
+    "uses": 19
   },
   "edital tecnologia Brasil 2026": {
     "score": 138,
@@ -68,16 +68,16 @@
     "uses": 11
   },
   "edital site:fapesp.br 2026": {
-    "score": 111,
-    "uses": 18
+    "score": 116,
+    "uses": 19
   },
   "chamada p\u00fablica site:cnpq.br 2026": {
-    "score": 65,
-    "uses": 20
+    "score": 69,
+    "uses": 21
   },
   "bolsa pesquisa site:gov.br 2026": {
-    "score": 85,
-    "uses": 16
+    "score": 95,
+    "uses": 17
   },
   "bolsa pesquisa site:fapesp.br 2026": {
     "score": 25,
