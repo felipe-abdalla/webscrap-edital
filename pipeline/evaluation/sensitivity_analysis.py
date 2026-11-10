@@ -1,5 +1,5 @@
 """Uso: python -m pipeline.evaluation.sensitivity_analysis datasets/run_XXXX [param ...]"""
-"""Varia um parâmetro por vez (OAT), demais no valor de DEFAULT"""
+"""Varia um parâmetro por vez (OAT), demais no valor de BASE"""
 import csv
 import sys
 from pathlib import Path
@@ -54,6 +54,8 @@ GRID = {
     "deadline.fallback_window": [500, 1000, 2000, 5000, 20000],
 }
 
+BASE = with_overrides(DEFAULT, {"deadline.sentence_dates": True})
+
 # Pesos individuais das palavras-chave de relevância: "relevance.keywords[edital]"
 for kw in DEFAULT.relevance.keywords:
     GRID[f"relevance.keywords[{kw}]"] = list(range(0, 7))
@@ -103,7 +105,8 @@ def sweep(snapshot: dict, labels: dict, contents: dict, param: str, values: list
 def score_key(stage: str, column: str, max_wrong: int):
     """Chave de comparação: maior é melhor. Tuplas comparam elemento a elemento"""
 
-    if stage == "listing":
+    if stage in ("listing", "deadline_date"):
+
         # 1º não aceita mais itens errados que o valor atual; 2º perde menos editais; 3º maior F0.5
         return lambda r: (r["end_to_end.fp"] <= max_wrong, -r["editais_perdidos.lost"], r[column])
     return lambda r: (r[column],)
@@ -170,16 +173,16 @@ def main():
     snapshot = load_snapshot(run_dir)
     labels = load_labels(run_dir)
     contents = load_contents(snapshot)
-    out_dir = run_dir / "sensitivity"
+    out_dir = run_dir / ("sensitivity" if BASE == DEFAULT else "sensitivity_base")
 
     impact = []
 
     for param in params:
         stage, metric = TARGETS[param.split(".")[0]]
         column = f"{stage}.{metric}"
-        current = current_value(DEFAULT, param)
+        current = current_value(BASE, param)
 
-        rows = sweep(snapshot, labels, contents, param, GRID[param])
+        rows = sweep(snapshot, labels, contents, param, GRID[param], BASE)
         write_rows(out_dir / f"{param}.csv", rows)
         plot(out_dir / f"{param}.png", param, rows, column, current)
 

@@ -70,6 +70,7 @@ class DeadlineConfig:
     regex_fallback_score: int = 1
     year_window: int = 10
     fallback_window: int = 2000
+    sentence_dates: bool = False 
 
 @dataclass(frozen=True)
 class DedupConfig:

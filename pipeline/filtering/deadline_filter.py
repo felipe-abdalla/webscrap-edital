@@ -5,6 +5,18 @@ from config.heuristics import DEFAULT, DeadlineConfig
 
 import dateparser
 
+_MONTHS = {
+    "janeiro": 1, "fevereiro": 2, "março": 3, "marco": 3, "abril": 4, "maio": 5, "junho": 6,
+    "julho": 7, "agosto": 8, "setembro": 9, "outubro": 10, "novembro": 11, "dezembro": 12,
+}
+
+# AAAA-MM-DD | DD/MM/AA(AA) | DD de mês [de AAAA]
+_DATE_RE = re.compile(
+    r"(\d{4})-(\d{2})-(\d{2})"
+    r"|(\d{1,2})/(\d{1,2})/(\d{2,4})"
+    r"|(\d{1,2})º?\s+de\s+(" + "|".join(_MONTHS) + r")(?:\s+de\s+(\d{4}))?"
+)
+
 class DeadlineExtractor:
 
     # No replay, "hoje" é a data da coleta (snapshot), não a data em que o código roda
@@ -34,6 +46,26 @@ class DeadlineExtractor:
                 'DATE_ORDER': 'DMY'
             }
         )
+
+    # Todas as datas escritas na frase, na ordem em que aparecem
+    def dates_in_sentence(self, sentence: str) -> List[datetime]:
+        dates = []
+
+        for m in _DATE_RE.finditer(sentence):
+            try:
+                if m[1]:
+                    dates.append(datetime(int(m[1]), int(m[2]), int(m[3])))
+                elif m[4]:
+                    year = int(m[6])
+                    dates.append(datetime(year + 2000 if year < 100 else year, int(m[5]), int(m[4])))
+                else:
+                    # Sem ano explícito: o ano da coleta
+                    year = int(m[9]) if m[9] else self.today_date.year
+                    dates.append(datetime(year, _MONTHS[m[8]], int(m[7])))
+            except ValueError:
+                continue
+
+        return dates
 
     # Fallback com regex
     def regex_dates(self, text: str) -> List[str]:
@@ -89,10 +121,17 @@ class DeadlineExtractor:
         expired_found = False
 
         for sentence in candidates:
-            parsed_date = self.parse_date(sentence)
+            if self.cfg.sentence_dates:
+                found = self.dates_in_sentence(sentence)
+                # Em "de X a Y", Y é o fim do período de inscrição
+                parsed_date = found[-1] if found else None
+            else:
+                parsed_date = self.parse_date(sentence)
 
             if parsed_date:
-                parsed_date = self.normalize_year(parsed_date)
+                if not self.cfg.sentence_dates:
+                    parsed_date = self.normalize_year(parsed_date)
+
                 score = self.score_sentence(sentence)
 
                 if score <= self.cfg.min_sentence_score:
@@ -102,7 +141,6 @@ class DeadlineExtractor:
                 
                 # Deadline expirado
                 if parsed_date.date() < self.today_date:
-                    print("[INSCRIÇÕES ENCERRADAS]")
                     expired_found = True
                     continue
 
