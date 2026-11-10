@@ -71,6 +71,8 @@ class DeadlineConfig:
     year_window: int = 10
     fallback_window: int = 2000
     sentence_dates: bool = False 
+    open_from_best: bool = False
+    date_by_keyword: bool = False
 
 @dataclass(frozen=True)
 class DedupConfig:

@@ -54,7 +54,33 @@ GRID = {
     "deadline.fallback_window": [500, 1000, 2000, 5000, 20000],
 }
 
-BASE = with_overrides(DEFAULT, {"deadline.sentence_dates": True})
+BASE = with_overrides(DEFAULT, {"deadline.sentence_dates": True, "deadline.open_from_best": True,
+                                "deadline.date_by_keyword": True})
+
+_NO_EDITAIS = tuple(p for p in DEFAULT.listing.url_patterns if p not in ("/editais/", "/chamadas/"))
+
+VARIANTS = {
+    "base": {},
+    "listing_sem_url_editais_chamadas": {"listing.url_patterns": _NO_EDITAIS},
+    "listing_sem_kw_editais_chamadas": {
+        "listing.url_patterns": _NO_EDITAIS,
+        "listing.url_keywords": tuple(k for k in DEFAULT.listing.url_keywords if k not in ("editais", "chamadas")),
+    },
+    "relevance_tema": {"relevance.keywords": {**DEFAULT.relevance.keywords,
+                       "fomento": 2, "subvenção": 2, "pesquisa": 1, "startup": 1, "bolsa": 1}},
+    "relevance_sem_score_threshold": {"relevance.score_threshold": 0},
+}
+
+def run_variants(snapshot, labels, contents, out_dir):
+    rows = []
+    for name, overrides in VARIANTS.items():
+        cfg = with_overrides(BASE, overrides)
+        res = _flatten(evaluate_stages(extract_features(snapshot, cfg, contents), labels, cfg))
+        rows.append({"variant": name, **res})
+        print(f"{name:<36} perdidos={res['editais_perdidos.lost']} errados={res['end_to_end.fp']} "
+              f"listing.f05={res['listing.f05']:.3f} relevance.f2={res['relevance.f2']:.3f} "
+              f"data={res['deadline_date.accuracy']:.3f}")
+    write_rows(out_dir / "variants.csv", rows)
 
 # Pesos individuais das palavras-chave de relevância: "relevance.keywords[edital]"
 for kw in DEFAULT.relevance.keywords:
@@ -173,6 +199,9 @@ def main():
     snapshot = load_snapshot(run_dir)
     labels = load_labels(run_dir)
     contents = load_contents(snapshot)
+    if "--variants" in sys.argv:
+        run_variants(snapshot, labels, contents, run_dir / "variants")
+        return
     out_dir = run_dir / ("sensitivity" if BASE == DEFAULT else "sensitivity_base")
 
     impact = []

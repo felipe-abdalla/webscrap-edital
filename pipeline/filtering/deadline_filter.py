@@ -17,6 +17,10 @@ _DATE_RE = re.compile(
     r"|(\d{1,2})º?\s+de\s+(" + "|".join(_MONTHS) + r")(?:\s+de\s+(\d{4}))?"
 )
 
+# Palavras que marcam o fim do prazo; a data seguinte é o prazo
+_LIMIT_ANCHOR_RE = re.compile(r"limite|encerramento|término|termino|retificad|prorrogad")
+_NEG_ANCHOR_RE = re.compile(r"resultado|divulga|homologa|publicad|assinatura")
+
 class DeadlineExtractor:
 
     # No replay, "hoje" é a data da coleta (snapshot), não a data em que o código roda
@@ -47,25 +51,41 @@ class DeadlineExtractor:
             }
         )
 
-    # Todas as datas escritas na frase, na ordem em que aparecem
-    def dates_in_sentence(self, sentence: str) -> List[datetime]:
+    # Todas as datas escritas na frase, com a posição onde começam
+    def date_matches(self, sentence: str) -> List[tuple]:
         dates = []
 
         for m in _DATE_RE.finditer(sentence):
             try:
                 if m[1]:
-                    dates.append(datetime(int(m[1]), int(m[2]), int(m[3])))
+                    d = datetime(int(m[1]), int(m[2]), int(m[3]))
                 elif m[4]:
                     year = int(m[6])
-                    dates.append(datetime(year + 2000 if year < 100 else year, int(m[5]), int(m[4])))
+                    d = datetime(year + 2000 if year < 100 else year, int(m[5]), int(m[4]))
                 else:
                     # Sem ano explícito: o ano da coleta
                     year = int(m[9]) if m[9] else self.today_date.year
-                    dates.append(datetime(year, _MONTHS[m[8]], int(m[7])))
+                    d = datetime(year, _MONTHS[m[8]], int(m[7]))
             except ValueError:
                 continue
+            dates.append((d, m.start()))
 
         return dates
+
+    def dates_in_sentence(self, sentence: str) -> List[datetime]:
+        return [d for d, _ in self.date_matches(sentence)]
+
+    # Primeira data depois de "limite", "encerramento"...; vale a última âncora que tem data
+    def pick_by_keyword(self, sentence: str, found: List[tuple]) -> datetime:
+        best = None
+
+        for anchor in _LIMIT_ANCHOR_RE.finditer(sentence):
+            after = [(d, start) for d, start in found if start > anchor.start()]
+            if after and not _NEG_ANCHOR_RE.search(sentence, anchor.end(), after[0][1]):
+                best = after[0][0]
+
+        return best or found[-1][0]
+
 
     # Fallback com regex
     def regex_dates(self, text: str) -> List[str]:
@@ -122,9 +142,12 @@ class DeadlineExtractor:
 
         for sentence in candidates:
             if self.cfg.sentence_dates:
-                found = self.dates_in_sentence(sentence)
-                # Em "de X a Y", Y é o fim do período de inscrição
-                parsed_date = found[-1] if found else None
+                found = self.date_matches(sentence)
+                if self.cfg.date_by_keyword and len(found) > 1:
+                    parsed_date = self.pick_by_keyword(sentence, found)
+                else:
+                    # Em "de X a Y", Y é o fim do período de inscrição
+                    parsed_date = found[-1][0] if found else None
             else:
                 parsed_date = self.parse_date(sentence)
 
@@ -163,6 +186,29 @@ class DeadlineExtractor:
                         continue
 
                     scored_dates.append((parsed_date, self.cfg.regex_fallback_score, match))
+
+        # A data de maior score é o prazo; se já passou, o edital está encerrado
+        if self.cfg.open_from_best and all_dates:
+            best_date, best_score, best_sentence = max(all_dates, key=lambda x: x[1])
+
+            if best_date.date() < self.today_date:
+                return {
+                    "deadline": None,
+                    "score": 0,
+                    "confidence": 0.0,
+                    "expired": True,
+                    "best_any_date": best_date.date()
+                }
+
+            return {
+                "deadline": best_date.date(),
+                "score": best_score,
+                "confidence": min(1.0, best_score / 10),
+                "source_sentence": best_sentence,
+                "expired": False,
+                "best_any_date": best_date.date()
+            }
+
 
         # Nenhuma válida encontrada
         if not scored_dates:

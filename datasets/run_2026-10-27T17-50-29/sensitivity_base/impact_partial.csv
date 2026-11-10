@@ -1,7 +1,9 @@
 ﻿param,metric,current,suggested,metric_current,metric_suggested,lost_current,lost_suggested,wrong_current,wrong_suggested,amplitude,amplitude_e2e
-deadline.keyword_weight,deadline_date.accuracy,2,2,0.47368421052631576,0.47368421052631576,7,7,5,5,0.21052631578947367,0.11428571428571432
-deadline.min_sentence_score,deadline_date.accuracy,0,-1,0.47368421052631576,0.47368421052631576,7,7,5,5,0.21052631578947367,0.11428571428571432
-deadline.negative_keyword_weight,deadline_date.accuracy,-3,-4,0.47368421052631576,0.47368421052631576,7,7,5,5,0.21052631578947367,0.04761904761904767
-deadline.regex_fallback_score,deadline_date.accuracy,1,1,0.47368421052631576,0.47368421052631576,7,7,5,5,0.05263157894736842,0.0
-deadline.ate_weight,deadline_date.accuracy,3,3,0.47368421052631576,0.47368421052631576,7,7,5,5,0.0,0.0
-deadline.encerramento_weight,deadline_date.accuracy,4,4,0.47368421052631576,0.47368421052631576,7,7,5,5,0.0,0.0
+deadline.negative_keyword_weight,deadline_date.accuracy,-3,-4,0.3684210526315789,0.3684210526315789,7,7,2,2,0.21052631578947367,0.0
+deadline.keyword_weight,deadline_date.accuracy,2,2,0.3684210526315789,0.3684210526315789,7,7,2,2,0.15789473684210525,0.0
+deadline.min_sentence_score,deadline_date.accuracy,0,-1,0.3684210526315789,0.3684210526315789,7,7,2,2,0.15789473684210525,0.0
+deadline.regex_fallback_score,deadline_date.accuracy,1,1,0.3684210526315789,0.3684210526315789,7,7,2,2,0.05263157894736842,0.0
+deadline.ate_weight,deadline_date.accuracy,3,3,0.3684210526315789,0.3684210526315789,7,7,2,2,0.0,0.0
+deadline.encerramento_weight,deadline_date.accuracy,4,4,0.3684210526315789,0.3684210526315789,7,7,2,2,0.0,0.0
+deadline.year_window,deadline_date.accuracy,10,10,0.3684210526315789,0.3684210526315789,7,7,2,2,0.0,0.0
+deadline.fallback_window,deadline_date.accuracy,2000,2000,0.3684210526315789,0.3684210526315789,7,7,2,2,0.0,0.0
