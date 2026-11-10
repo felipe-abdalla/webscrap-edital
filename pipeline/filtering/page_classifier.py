@@ -1,10 +1,6 @@
 import re
 from config.heuristics import DEFAULT, ListingConfig
 
-
-# Padrão de URL markdown: [texto](https://...) — indica página agregadora
-_MARKDOWN_LINK_RE = re.compile(r'\[([^\]]+)\]\(https?://[^\)]+\)')
-
 # Datas no formato dd/mm/aaaa ou dd/mm/aa
 _DATE_RE = re.compile(r'\d{1,2}/\d{1,2}/\d{2,4}')
 
@@ -19,13 +15,6 @@ def listing_score(url: str, content: str, cfg: ListingConfig = DEFAULT.listing) 
         listing_score += cfg.url_keyword_weight
     if any(p in url_lower for p in cfg.url_patterns):
         listing_score += cfg.url_pattern_weight
-
-    # Links em formato Markdown no conteúdo
-    link_count = len(_MARKDOWN_LINK_RE.findall(content))
-    if link_count > cfg.link_low:
-        listing_score += cfg.link_weight
-    if link_count > cfg.link_high:
-        listing_score += cfg.link_weight
 
     # Quantidade de dadas em excesso
     date_matches = _DATE_RE.findall(content_lower)

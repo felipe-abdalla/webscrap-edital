@@ -198,14 +198,6 @@ class EditalPipeline:
             score = relevance["score"]
             print(f"[SCORE]: {score}")
 
-            if score < cfg.relevance.score_threshold:
-                print("[LOW SCORE]")
-
-                evaluation_entry["reason"] = "low_score"
-
-                evaluation_log.append(evaluation_entry)
-                continue
-
             # Deadline
             found = find_deadline(deadline_extractor, content, cfg.deadline.fallback_window)
 

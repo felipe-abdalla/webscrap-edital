@@ -58,7 +58,6 @@ def pipeline_accepts(f: dict, cfg: HeuristicConfig) -> bool:
     return (
         f["listing_score"] < cfg.listing.threshold
         and f["relevance_score"] >= cfg.relevance.threshold
-        and f["relevance_score"] >= cfg.relevance.score_threshold
         and f["deadline"] is not None
     )
 

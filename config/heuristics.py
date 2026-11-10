@@ -17,9 +17,6 @@ class ListingConfig:
     )
     url_keyword_weight: int = 2
     url_pattern_weight: int = 3
-    link_low: int = 10
-    link_high: int = 25
-    link_weight: int = 2
     date_low: int = 5
     date_high: int = 10
     date_weight: int = 2
@@ -49,7 +46,6 @@ class RelevanceConfig:
     density_low: float = 0.02
     density_low_bonus: int = 1
     threshold: int = 3
-    score_threshold: int = 2
 
 @dataclass(frozen=True)
 class DeadlineConfig:

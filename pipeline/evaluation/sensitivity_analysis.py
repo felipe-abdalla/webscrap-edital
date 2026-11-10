@@ -20,15 +20,12 @@ TARGETS = {
 }
 
 # Limiares não mudam os scores: reaproveitam as features da configuração base
-THRESHOLDS = {"listing.threshold", "relevance.threshold", "relevance.score_threshold"}
+THRESHOLDS = {"listing.threshold", "relevance.threshold"}
 
 GRID = {
     "listing.threshold": list(range(0, 12)),
     "listing.url_keyword_weight": list(range(0, 7)),
     "listing.url_pattern_weight": list(range(0, 7)),
-    "listing.link_low": [0, 5, 10, 15, 20, 25],
-    "listing.link_high": [10, 25, 50, 100],
-    "listing.link_weight": list(range(0, 5)),
     "listing.date_low": [0, 2, 5, 10, 15, 20],
     "listing.date_high": [5, 10, 20, 30, 50],
     "listing.date_weight": list(range(0, 5)),
@@ -38,7 +35,6 @@ GRID = {
     "listing.plural_chamadas_weight": list(range(0, 5)),
 
     "relevance.threshold": [0, 3, 5, 10, 15, 20, 30, 40, 60, 80],
-    "relevance.score_threshold": [0, 2, 5, 10, 20],
     "relevance.density_high": [0.02, 0.03, 0.05, 0.08, 0.1],
     "relevance.density_high_bonus": list(range(0, 7)),
     "relevance.density_low": [0.005, 0.01, 0.02, 0.03],
@@ -54,21 +50,19 @@ GRID = {
     "deadline.fallback_window": [500, 1000, 2000, 5000, 20000],
 }
 
-BASE = with_overrides(DEFAULT, {"deadline.sentence_dates": True, "deadline.open_from_best": True,
-                                "deadline.date_by_keyword": True})
-
 _NO_EDITAIS = tuple(p for p in DEFAULT.listing.url_patterns if p not in ("/editais/", "/chamadas/"))
+
+BASE = with_overrides(DEFAULT, {
+    "deadline.sentence_dates": True,
+    "deadline.open_from_best": True,
+    "deadline.date_by_keyword": True,
+    "listing.url_patterns": _NO_EDITAIS,
+})
 
 VARIANTS = {
     "base": {},
-    "listing_sem_url_editais_chamadas": {"listing.url_patterns": _NO_EDITAIS},
-    "listing_sem_kw_editais_chamadas": {
-        "listing.url_patterns": _NO_EDITAIS,
-        "listing.url_keywords": tuple(k for k in DEFAULT.listing.url_keywords if k not in ("editais", "chamadas")),
-    },
     "relevance_tema": {"relevance.keywords": {**DEFAULT.relevance.keywords,
                        "fomento": 2, "subvenção": 2, "pesquisa": 1, "startup": 1, "bolsa": 1}},
-    "relevance_sem_score_threshold": {"relevance.score_threshold": 0},
 }
 
 def run_variants(snapshot, labels, contents, out_dir):
@@ -202,7 +196,7 @@ def main():
     if "--variants" in sys.argv:
         run_variants(snapshot, labels, contents, run_dir / "variants")
         return
-    out_dir = run_dir / ("sensitivity" if BASE == DEFAULT else "sensitivity_base")
+    out_dir = run_dir / "sensitivity_base"
 
     impact = []
 
@@ -223,8 +217,8 @@ def main():
 
     impact.sort(key=lambda r: (r["amplitude"], r["amplitude_e2e"]), reverse=True)
 
-    # Só a varredura completa grava impact.csv; execuções parciais não sobrescrevem a tabela
-    name = "impact.csv" if len(sys.argv) == 2 else "impact_partial.csv"
+    groups = sorted({p.split(".")[0] for p in params})
+    name = "impact.csv" if len(sys.argv) == 2 else f"impact_{'_'.join(groups)}.csv"
     write_rows(out_dir / name, impact)
 
 
