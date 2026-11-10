@@ -8,23 +8,22 @@ class ListingConfig:
         "todas-as-chamadas", "todas-as-oportunidades",
     )
     url_patterns: tuple[str, ...] = (
-        "/noticias/", "/notícias/", "/oportunidades/", "/editais-2026", "/editais/",
-        "/chamadas/", "/bolsas/", "/programas/", "/resultados/",
+        "/noticias/", "/notícias/", "/oportunidades/", "/editais-2026", "/bolsas/", "/programas/", "/resultados/",
     )
     detail_keywords: tuple[str, ...] = (
         "chamada pública", "edital", "nº", "numero",
         "inscrição", "prazo", "submissão", "cronograma",
     )
     url_keyword_weight: int = 2
-    url_pattern_weight: int = 3
+    url_pattern_weight: int = 0
     date_low: int = 5
-    date_high: int = 10
+    date_high: int = 20
     date_weight: int = 2
     min_detail_hits: int = 2
     low_detail_weight: int = 2
-    plural_editais_weight: int = 1
+    plural_editais_weight: int = 2
     plural_chamadas_weight: int = 1
-    threshold: int = 5
+    threshold: int = 6
 
 @dataclass(frozen=True)
 class RelevanceConfig:
@@ -66,9 +65,9 @@ class DeadlineConfig:
     regex_fallback_score: int = 1
     year_window: int = 10
     fallback_window: int = 2000
-    sentence_dates: bool = False 
-    open_from_best: bool = False
-    date_by_keyword: bool = False
+    sentence_dates: bool = True 
+    open_from_best: bool = True
+    date_by_keyword: bool = True
 
 @dataclass(frozen=True)
 class DedupConfig:
