@@ -1,0 +1,9 @@
+﻿param,metric,current,suggested,metric_current,metric_suggested,lost_current,lost_suggested,wrong_current,wrong_suggested,amplitude,amplitude_e2e
+deadline.keyword_weight,deadline_date.accuracy,2,2,0.5263157894736842,0.5263157894736842,4,4,2,2,0.2631578947368421,0.0
+deadline.min_sentence_score,deadline_date.accuracy,0,-1,0.5263157894736842,0.5263157894736842,4,4,2,2,0.2631578947368421,0.0
+deadline.negative_keyword_weight,deadline_date.accuracy,-3,-3,0.5263157894736842,0.5263157894736842,4,4,2,2,0.21052631578947367,0.4
+deadline.ate_weight,deadline_date.accuracy,3,4,0.5263157894736842,0.5263157894736842,4,4,2,2,0.05263157894736842,0.0
+deadline.regex_fallback_score,deadline_date.accuracy,1,1,0.5263157894736842,0.5263157894736842,4,4,2,2,0.05263157894736842,0.0
+deadline.encerramento_weight,deadline_date.accuracy,4,4,0.5263157894736842,0.5263157894736842,4,4,2,2,0.0,0.0
+deadline.year_window,deadline_date.accuracy,10,10,0.5263157894736842,0.5263157894736842,4,4,2,2,0.0,0.0
+deadline.fallback_window,deadline_date.accuracy,2000,2000,0.5263157894736842,0.5263157894736842,4,4,2,2,0.0,0.0
