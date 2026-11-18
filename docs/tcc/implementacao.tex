@@ -4,7 +4,8 @@
 Este capítulo descreve a implementação do sistema projetado no
 Capítulo~\ref{cap:projeto}. São apresentados a organização do código, a
 configuração, a coleta, o processamento, a persistência, a linha de comando, o
-servidor e o cliente web, o módulo de avaliação e o teste de regressão. As
+servidor e o cliente web, o módulo de avaliação, o teste de regressão e um
+guia para conduzir uma nova análise. As
 tecnologias citadas foram apresentadas na Seção~\ref{sec:tecnologias}.
 
 % -----------------------------------------------------------------------------
@@ -58,8 +59,9 @@ main.py                & Ponto de entrada da linha de comando. \\
 
 A configuração tem duas partes. A primeira reúne os dados do ambiente de
 execução: a chave de acesso à API de busca, o endereço de conexão com o banco
-e os parâmetros da atualização automática (se ela está ligada e o intervalo
-entre coletas, de 24 horas por padrão). Esses valores são lidos de variáveis
+e os parâmetros da atualização automática (se ela está ligada, o horário
+diário da coleta e o fuso horário, por padrão meia-noite no horário de
+Brasília). Esses valores são lidos de variáveis
 de ambiente, carregadas de um arquivo local que não é versionado, o que mantém
 as credenciais fora do código-fonte (RNF07).
 
@@ -84,7 +86,8 @@ gravada no manifesto de cada coleta.
 
 A função \texttt{generate\_queries} gera as consultas em três grupos: consultas
 por domínio, que combinam seis termos-base com quatro domínios institucionais
-por meio do operador \texttt{site:} e acrescentam o ano de referência;
+por meio do operador \texttt{site:} e acrescentam o ano de referência (o ano
+corrente no horário de Brasília, obtido a cada geração de consultas);
 consultas temáticas, formadas a partir de uma lista configurável de temas; e
 duas consultas regionais. Após a remoção de repetições, as consultas com
 \texttt{site:} são colocadas à frente e a lista é limitada às 20 primeiras.
@@ -239,11 +242,16 @@ A atualização automática é implementada pela classe \texttt{Updater}, cuja
 rotina principal é executada em uma \textit{thread} de segundo plano, iniciada
 junto com o servidor. O instante da última coleta é lido do manifesto mais
 recente do diretório de coletas, e não da memória do processo. Assim,
-reiniciar o servidor não antecipa nem adia a coleta, e, se o servidor ficar
-desligado por mais de 24 horas, a coleta é executada assim que ele voltar. A
+reiniciar o servidor não antecipa nem adia a coleta. A próxima coleta é
+agendada para a primeira meia-noite, no fuso \texttt{America/Sao\_Paulo},
+posterior à última coleta; se o servidor estava desligado nesse horário, a
+coleta perdida é executada assim que ele voltar. A
 rotina calcula o tempo até a próxima coleta e aguarda no máximo uma hora antes
 de reavaliar o horário. Uma coleta que falha é registrada e repetida após uma
-hora. Um bloqueio (\textit{lock}) impede que duas coletas sejam executadas ao
+hora. Cada coleta automática grava um \textit{snapshot} completo, como as
+coletas feitas pela linha de comando, o que forma um acervo de coletas
+disponível para rotulação e recalibração (Seção~\ref{sec:impl_recalibracao}).
+Um bloqueio (\textit{lock}) impede que duas coletas sejam executadas ao
 mesmo tempo, e, pelo mesmo motivo, o recarregador automático do Flask, que
 iniciaria um segundo processo, foi desativado.
 
@@ -325,7 +333,8 @@ comando sobre o diretório de uma coleta:
   \item \textbf{Avaliador}: compara o arquivo de predições com o arquivo de
     rótulos e grava as métricas de cada etapa. Na primeira execução sobre uma
     coleta, cria o arquivo de rótulos em branco, com uma linha por item, para
-    a rotulação manual.
+    a rotulação manual, podendo omitir os itens já rotulados em outras
+    coletas.
   \item \textbf{Experimentos}: calcula as pontuações das três heurísticas para
     todos os itens, independentemente da cadeia, e reproduz a cadeia a partir
     dessas pontuações. Implementa as duas formas de avaliação da
@@ -362,3 +371,477 @@ verifica se as decisões estão corretas, papel do módulo de avaliação, mas
 apenas se mudaram. Ele foi executado após cada refatoração, e o arquivo de
 referência só foi substituído no congelamento da configuração
 (Seção~\ref{subsec:etapaE}).
+
+Como o arquivo de referência é versionado, o teste também pode ser feito
+reprocessando o \textit{snapshot} no próprio diretório e pedindo ao Git as
+diferenças do arquivo de predições. Uma saída vazia indica identidade:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python main.py --replay datasets/run_2026-10-27T17-50-29
+> git diff --stat -- datasets/run_2026-10-27T17-50-29/predictions.csv
+>
+\end{verbatim}
+\end{footnotesize}
+
+% -----------------------------------------------------------------------------
+\section{Guia para uma nova análise}
+\label{sec:impl_recalibracao}
+
+As páginas das instituições de fomento mudam de estrutura, o vocabulário dos
+editais varia e novas fontes podem ser incluídas nas consultas. Por isso, a
+configuração calibrada neste trabalho não deve ser considerada definitiva.
+Esta seção é um guia para conduzir uma nova análise do zero, com coletas e
+rótulos novos, seguindo as Etapas A a E da Seção~\ref{sec:calibracao}. Para
+cada passo são dados o objetivo, os comandos e o retorno esperado.
+
+Todos os comandos são executados a partir da raiz do projeto, em um terminal
+PowerShell; nos comandos longos, o acento grave (\texttt{`}) ao final da linha
+indica continuação. \texttt{run\_CAL} e \texttt{run\_TESTE} representam os
+diretórios das coletas de calibração e de teste da nova análise, nomeados pelo
+instante da coleta (por exemplo, \texttt{run\_2027-03-02T00-00-05}). Os
+retornos mostrados são exemplos, obtidos com as coletas deste trabalho; numa
+nova análise, os números serão outros, mas o formato é o mesmo. Trechos
+repetitivos foram omitidos (\texttt{[...]}).
+
+O guia não exige alteração do código para ser seguido em outro ano: o ano das
+consultas é o ano corrente (Seção~\ref{sec:impl_coleta}), e a data de
+referência de cada coleta é lida do seu manifesto. As alterações de código
+previstas são apenas as que a própria análise decidir fazer, nos Passos 6 e 8.
+
+\begin{table}[htbp]
+\centering
+\caption{Passos de uma nova análise}
+\label{tab:guia}
+\small
+\begin{tabularx}{\textwidth}{c l X}
+\toprule
+Passo & Etapa & Ação \\
+\midrule
+1 & --- & Preparar o ambiente e confirmar o estado do código. \\
+2 & --- & Fazer as coletas de calibração e de teste. \\
+3 & B   & Rotular as duas coletas; reservar a de teste. \\
+4 & A   & Avaliar a configuração vigente na calibração. \\
+5 & C   & Executar a análise de sensibilidade. \\
+6 & D   & Implementar e comparar variantes estruturais. \\
+7 & D   & Executar a busca em grade e a validação. \\
+8 & E   & Congelar a nova configuração. \\
+9 & E   & Avaliar a coleta de teste, uma única vez. \\
+10 & --- & Remover mecanismos sem efeito e registrar a análise. \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelo autor.}
+\end{table}
+
+\subsection{Passo 1: preparação do ambiente}
+
+Instalam-se as dependências nas versões fixadas e inicia-se o contêiner do
+banco. O arquivo \texttt{.env}, na raiz do projeto, deve conter a chave da API
+de busca (\texttt{API\_KEY}) e o endereço do banco (\texttt{DATABASE\_URL}).
+
+\begin{footnotesize}
+\begin{verbatim}
+> pip install -r requirements.txt
+> docker start postgres-editais
+\end{verbatim}
+\end{footnotesize}
+
+Em seguida, executa-se o teste de regressão (Seção~\ref{sec:impl_regressao})
+sobre a coleta de calibração da análise anterior, que está versionada com o seu
+arquivo de predições de referência. Uma saída vazia confirma que o código se
+comporta exatamente como no último congelamento; uma diferença indica uma
+alteração não registrada, que deve ser esclarecida antes de prosseguir, pois a
+nova análise partiria de uma configuração desconhecida.
+
+\begin{footnotesize}
+\begin{verbatim}
+> python main.py --replay datasets/run_2026-10-27T17-50-29
+> git diff --stat -- datasets/run_2026-10-27T17-50-29/predictions.csv
+>
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Passo 2: coletas}
+
+São necessárias duas coletas, uma para a calibração e outra para o teste,
+feitas em datas distintas para que o teste represente dados não vistos. Há
+duas formas de obtê-las:
+
+\begin{itemize}
+  \item \textbf{Coletas do servidor}. Com o servidor web em execução, uma
+    coleta é feita todos os dias à meia-noite (Seção~\ref{sec:impl_servidor}),
+    e cada uma grava um \textit{snapshot} em \texttt{datasets/}. Basta escolher
+    dois desses diretórios, de datas afastadas.
+  \item \textbf{Linha de comando}. Cada execução faz uma coleta completa:
+\end{itemize}
+
+\begin{footnotesize}
+\begin{verbatim}
+> python main.py
+Mantendo dados existentes...
+Resultados brutos: <n>
+Após deduplicação: <n>
+Snapshot salvo em: datasets\run_AAAA-MM-DDTHH-MM-SS
+[...]
+Avaliação salva em: datasets\run_AAAA-MM-DDTHH-MM-SS\predictions.csv
+Editais válidos: <aceitos>/<itens>
+\end{verbatim}
+\end{footnotesize}
+
+Nas duas formas, a coleta é feita com persistência, e os itens cujas URLs já
+estão no banco são descartados com o motivo \texttt{url\_duplicada}
+(Seção~\ref{sec:impl_processamento}). As predições gravadas na coleta,
+portanto, não servem para a avaliação. Elas são preservadas com outro nome, e
+o \textit{snapshot} é reprocessado sem banco, o que gera predições para todos
+os itens. O procedimento é repetido para a coleta de teste:
+
+\begin{footnotesize}
+\begin{verbatim}
+> Rename-Item datasets/run_CAL/predictions.csv predictions_coleta.csv
+> python main.py --replay datasets/run_CAL
+[PROCESSANDO]
+[URL]: http://resultado.cnpq.br/5170965351053941
+[SCORE]: 91
+[EXPIRED DEADLINE]
+Avaliação salva em: datasets\run_CAL\predictions.csv
+Editais válidos: 2/47
+Editais encontrados: 2
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Passo 3: rotulação e reserva do teste}
+
+Na primeira execução do avaliador sobre uma coleta, é criado o arquivo de
+rótulos em branco, com uma linha por item:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.evaluator datasets/run_CAL
+labels.csv criado em datasets\run_CAL\labels.csv. Preencha os rótulos e rode
+novamente.
+\end{verbatim}
+\end{footnotesize}
+
+Na coleta de teste, nenhum item usado na calibração pode ser usado na
+avaliação. A opção \texttt{-{}-excluir}, seguida dos diretórios da coleta de
+calibração e de qualquer outro conjunto rotulado anterior, cria o arquivo de
+rótulos sem os itens que já constam dos rótulos dessas coletas. Como o
+identificador de cada item é derivado da URL normalizada
+(Seção~\ref{sec:impl_coleta}), um mesmo endereço recebe o mesmo identificador
+em coletas diferentes. A opção só atua na criação do arquivo e nunca altera
+rótulos já preenchidos:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.evaluator datasets/run_TESTE `
+    --excluir datasets/run_CAL
+19 de 45 itens já rotulados em datasets/run_CAL foram omitidos.
+labels.csv criado em datasets\run_TESTE\labels.csv. Preencha os rótulos e rode
+novamente.
+\end{verbatim}
+\end{footnotesize}
+
+Os rótulos da Tabela~\ref{tab:rotulos} são preenchidos com \texttt{yes} ou
+\texttt{no}, e a data máxima de inscrição no formato AAAA-MM-DD, segundo o guia
+de rotulação (\texttt{datasets/GUIA\_ROTULACAO.md}) e suas duas regras de
+consistência (Seção~\ref{sec:dados}). As duas coletas devem ser rotuladas com
+os mesmos critérios. Se a planilha for editada no Excel, deve ser salva no
+formato CSV UTF-8 e fechada antes dos comandos seguintes, pois o Excel bloqueia
+a gravação dos arquivos abertos.
+
+A partir deste passo, a coleta de teste fica reservada: nenhum comando do
+módulo de avaliação é executado sobre ela até o Passo 9. Admite-se apenas a
+conferência manual do formato e da consistência dos rótulos.
+
+\subsection{Passo 4: avaliação da configuração vigente}
+
+Antes de qualquer ajuste, mede-se o desempenho da configuração vigente na
+coleta de calibração. O avaliador grava as métricas da execução em cadeia em
+\texttt{metrics.csv}, e o módulo de experimentos grava as pontuações das
+heurísticas em \texttt{features.csv} e imprime as métricas por etapa e
+operacionais (Seções~\ref{subsec:operacionais} e~\ref{subsec:modos}). Esses
+números são a referência para as decisões dos passos seguintes, e o
+\texttt{metrics.csv} deve ser preservado com outro nome antes do Passo 8, pois
+será regravado com a nova configuração.
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.evaluator datasets/run_CAL
+listing      n=47  P=0.750 R=0.333 F1=0.462 F2=0.375
+relevance    n=47  P=0.667 R=0.889 F1=0.762 F2=0.833
+is_edital    n=47  P=0.000 R=0.000 F1=0.000 F2=0.000
+end_to_end   n=47  P=0.000 R=0.000 F1=0.000 F2=0.000
+deadline     n=47  P=0.000 R=0.000 F1=0.000 F2=0.000
+
+> python -m pipeline.evaluation.experiments datasets/run_CAL
+listing            n=47  P=0.750 R=0.333 F0.5=0.600 F1=0.462 F2=0.375
+relevance          n=47  P=0.643 R=1.000 F0.5=0.692 F1=0.783 F2=0.900
+deadline_exists    n=20  P=0.947 R=0.947 F0.5=0.947 F1=0.947 F2=0.947
+deadline_open      n=19  P=0.000 R=0.000 F0.5=0.000 F1=0.000 F2=0.000
+deadline_date      n=19  acertos=10 acc=0.526
+editais_perdidos   n=20  perdidos=1
+end_to_end         n=47  P=0.000 R=0.000 F0.5=0.000 F1=0.000 F2=0.000
+aceitos_data_certa n=2   acertos=0 acc=0.000
+\end{verbatim}
+\end{footnotesize}
+
+As métricas de relevância diferem entre os dois comandos porque o avaliador lê
+as decisões da execução em cadeia, na qual um item descartado como listagem não
+chega a ter a relevância decidida e é contado como não relevante, enquanto o
+módulo de experimentos avalia cada heurística sobre todos os itens. As
+decisões da análise apoiam-se nas métricas do módulo de experimentos,
+sobretudo em \texttt{editais\_perdidos} e nos itens errados aceitos (os falsos
+positivos de \texttt{end\_to\_end}).
+
+\subsection{Passo 5: análise de sensibilidade}
+
+A análise OAT (Etapa C) varia cada parâmetro numérico ao longo de uma grade de
+valores, mantidos os demais na configuração de base, e leva cerca de dois
+minutos sobre uma coleta de 47 itens. Para cada parâmetro, imprime a amplitude
+da métrica-alvo e do $F_1$ do resultado final, o valor atual, o valor sugerido e
+os editais perdidos e itens errados aceitos nos dois valores:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.sensitivity_analysis datasets/run_CAL
+listing.threshold          amp=0.682 amp_e2e=0.000 atual=6 sugerido=6
+                           perdidos 1->1 errados 2->2
+listing.date_high          amp=0.099 amp_e2e=0.000 atual=20 sugerido=30
+                           perdidos 1->1 errados 2->2
+[...]
+deadline.year_window       amp=0.000 amp_e2e=0.000 atual=10 sugerido=10
+                           perdidos 1->1 errados 2->2
+[...]
+\end{verbatim}
+\end{footnotesize}
+
+Cada linha foi quebrada aqui para caber na página; no terminal, ocupa uma só.
+Os resultados são gravados no subdiretório \texttt{sensitivity\_base/} da
+coleta: uma tabela e um gráfico por parâmetro e a tabela-resumo
+\texttt{impact.csv}, ordenada pela amplitude. Para analisar apenas alguns
+parâmetros, seus nomes são passados após o diretório, e a tabela-resumo passa a
+se chamar \texttt{impact\_<grupos>.csv}:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.sensitivity_analysis datasets/run_CAL `
+    listing.threshold deadline.year_window
+\end{verbatim}
+\end{footnotesize}
+
+A leitura segue três regras:
+
+\begin{itemize}
+  \item um valor sugerido diferente do atual só é candidato a alteração se
+    melhora o critério lexicográfico (Seção~\ref{subsec:etapaC}): não aumenta
+    os itens errados, perde menos editais ou, empatados esses, melhora a
+    métrica-alvo;
+  \item quando a amplitude é nula, todos os valores empatam e o valor sugerido
+    é apenas o centro da grade, sem significado. O parâmetro deve ser
+    investigado no código, pois pode haver um defeito que o impede de atuar,
+    como os encontrados neste trabalho (Seção~\ref{sec:res_sensibilidade});
+  \item as grades de valores ficam no dicionário \texttt{GRID} do módulo e
+    podem ser ampliadas quando o melhor valor estiver na borda da grade.
+\end{itemize}
+
+A configuração de base é a constante \texttt{BASE} do módulo, que deve ser
+igual à configuração padrão vigente. Ela coincide hoje com a configuração
+padrão; se uma análise anterior a tiver alterado, deve ser corrigida antes deste
+passo.
+
+\subsection{Passo 6: variantes estruturais}
+
+As hipóteses de mudança de regra levantadas no passo anterior, como uma nova
+forma de extrair a data, são implementadas como opções da configuração,
+desligadas por padrão, no arquivo \texttt{config/heuristics.py} e no módulo do
+filtro correspondente. Depois de cada implementação, o teste de regressão do
+Passo 1 deve resultar em identidade, o que confirma que a opção desligada não
+altera o comportamento. A variante é então cadastrada no dicionário
+\texttt{VARIANTS} do módulo de análise de sensibilidade, com um nome e as
+alterações de configuração que a ligam, e comparada à base:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.sensitivity_analysis datasets/run_CAL --variants
+base            perdidos=1 errados=2 listing.f05=0.600 relevance.f2=0.900
+                data=0.526
+relevance_tema  perdidos=1 errados=2 listing.f05=0.600 relevance.f2=0.894
+                data=0.526
+\end{verbatim}
+\end{footnotesize}
+
+A tabela correspondente é gravada em \texttt{variants/variants.csv}. Uma
+variante é aceita somente se atende ao critério lexicográfico; no exemplo, a
+variante de vocabulário temático não muda editais perdidos nem itens errados e
+reduz a métrica-alvo, e seria rejeitada. As variantes aceitas são ligadas na
+constante \texttt{BASE}, e a análise do Passo 5 é repetida sobre a nova base.
+
+Ao final deste passo, o código das variantes é registrado em um
+\textit{commit}, com todas as opções ainda desligadas na configuração padrão.
+O arquivo \texttt{config/heuristics.py} desse \textit{commit} contém, portanto,
+a configuração anterior completa, inclusive as opções novas, e será usado no
+Passo 9. Se nenhuma variante for implementada, anota-se o \textit{commit}
+vigente:
+
+\begin{footnotesize}
+\begin{verbatim}
+> git add config pipeline
+> git commit -m "Variantes da nova análise, desligadas por padrão"
+> git log --oneline -1
+<commit_anterior> Variantes da nova análise, desligadas por padrão
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Passo 7: busca em grade e validação}
+
+Como a análise OAT não captura interações entre parâmetros, a busca em grade
+(Etapa D) avalia todas as combinações dos parâmetros do filtro de listagem
+definidas no dicionário \texttt{GRID} do módulo (Tabela~\ref{tab:grade}), a
+partir da configuração \texttt{BASE}, e em seguida executa a validação cruzada
+e o \textit{bootstrap}. Leva cerca de 15 segundos:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python -m pipeline.evaluation.grid_search datasets/run_CAL
+melhor da grade: {'listing.url_pattern_weight': 0, 'listing.url_keyword_weight': 2,
+  'listing.date_weight': 2, 'listing.date_high': 20,
+  'listing.plural_editais_weight': 2, 'listing.threshold': 6, 'changed': 0,
+  'lost': 1, 'wrong': 2, 'f05': 0.6000000000000001}
+empatados no topo: 4
+CV base       perdidos=10 errados=20
+CV escolhida  perdidos=22 errados=20
+estabilidade: [('0|2|2|20|2|6', 40), ('0|2|2|20|2|5', 8), ('0|2|3|20|2|5', 1)]
+  de 50 dobras
+bootstrap IC95% (escolhida - base): {'lost': (0, 0), 'wrong': (0, 0)}
+\end{verbatim}
+\end{footnotesize}
+
+As linhas do retorno significam:
+
+\begin{itemize}
+  \item \texttt{melhor da grade}: a primeira combinação pelo critério
+    lexicográfico, com o número de parâmetros que ela altera em relação à base
+    (\texttt{changed}), os editais perdidos (\texttt{lost}), os itens errados
+    aceitos (\texttt{wrong}) e a $F_{0{,}5}$ da listagem;
+  \item \texttt{empatados no topo}: quantas combinações empatam com a
+    primeira; entre elas, a ordenação já privilegia a que altera menos
+    parâmetros;
+  \item \texttt{CV}: soma, sobre as 50 partições da validação cruzada, dos
+    editais perdidos e itens errados nos itens retidos, com a base e com a
+    combinação escolhida usando apenas os itens de treino de cada partição;
+  \item \texttt{estabilidade}: as combinações mais escolhidas nas partições;
+  \item \texttt{bootstrap}: intervalo de confiança de 95\% da diferença entre
+    a melhor combinação e a base, em editais perdidos e itens errados.
+\end{itemize}
+
+As tabelas completas são gravadas em \texttt{grid/grid\_listing.csv} e
+\texttt{grid/cv\_listing.csv}. A melhor combinação só deve ser adotada se
+\texttt{changed} for maior que zero, se a linha \texttt{CV} da combinação
+escolhida não for pior que a da base e se o intervalo de confiança não indicar
+piora. No exemplo, executado sobre a configuração já calibrada, a melhor
+combinação é a própria base (\texttt{changed}~=~0), e não há o que alterar.
+
+\subsection{Passo 8: congelamento}
+
+Os valores e as opções escolhidos nos Passos 5 a 7 tornam-se o padrão das
+classes de configuração em \texttt{config/heuristics.py}, e a constante
+\texttt{BASE} é ajustada para coincidir com a nova configuração padrão. Neste
+passo, apenas valores e opções mudam; nenhum mecanismo é removido, para que o
+arquivo de configuração do \textit{commit} anotado no Passo 6 continue
+executável pelo código atual no Passo 9.
+
+Em seguida, o \textit{snapshot} de calibração é reprocessado, o que gera o novo
+arquivo de referência do teste de regressão, as métricas da calibração são
+regravadas, e tudo é registrado em um \textit{commit}:
+
+\begin{footnotesize}
+\begin{verbatim}
+> Rename-Item datasets/run_CAL/metrics.csv metrics_pre_calibracao.csv
+> python main.py --replay datasets/run_CAL
+> python -m pipeline.evaluation.evaluator datasets/run_CAL
+> python -m pipeline.evaluation.experiments datasets/run_CAL
+> git add config/heuristics.py pipeline/evaluation datasets/run_CAL
+> git commit -m "Congela configuração da nova análise"
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Passo 9: avaliação no conjunto de teste}
+
+Só depois do congelamento a coleta de teste é avaliada, uma única vez. Primeiro
+com a configuração anterior, recuperando temporariamente o arquivo de
+configuração do \textit{commit} anotado no Passo 6, e depois com a nova. Como ambas foram fixadas antes de
+qualquer consulta ao teste, a comparação entre elas é legítima. O aviso do
+avaliador corresponde aos itens omitidos no Passo 3.
+
+\begin{footnotesize}
+\begin{verbatim}
+> python main.py --replay datasets/run_TESTE
+
+> git checkout <commit_anterior> -- config/heuristics.py
+> python -m pipeline.evaluation.experiments datasets/run_TESTE
+[métricas da configuração anterior, no formato do Passo 4]
+> git checkout HEAD -- config/heuristics.py
+
+> python -m pipeline.evaluation.evaluator datasets/run_TESTE
+[AVISO] 19 itens sem linha em labels.csv
+listing      n=26  P=0.500 R=0.200 F1=0.286 F2=0.227
+[...]
+> python -m pipeline.evaluation.experiments datasets/run_TESTE
+listing            n=26  P=0.500 R=0.200 F0.5=0.385 F1=0.286 F2=0.227
+relevance          n=26  P=0.400 R=0.800 F0.5=0.444 F1=0.533 F2=0.667
+deadline_exists    n=14  P=0.857 R=1.000 F0.5=0.882 F1=0.923 F2=0.968
+deadline_open      n=14  P=0.667 R=0.667 F0.5=0.667 F1=0.667 F2=0.667
+deadline_date      n=12  acertos=4 acc=0.333
+editais_perdidos   n=14  perdidos=1
+end_to_end         n=26  P=0.333 R=0.500 F0.5=0.357 F1=0.400 F2=0.455
+aceitos_data_certa n=3   acertos=1 acc=0.333
+\end{verbatim}
+\end{footnotesize}
+
+A segunda execução do módulo de experimentos deve ser a última, pois cada
+execução regrava o \texttt{features.csv} com a configuração em uso, e o
+arquivo que fica na coleta deve ser o da configuração nova. As duas saídas do
+módulo de experimentos, anterior e nova, são registradas como resultado da
+análise, nos moldes da Tabela~\ref{tab:resultados}.
+
+Nenhum ajuste é feito depois desta avaliação. Uma nova alteração exige uma
+nova análise, com nova coleta de teste, pois a atual deixa de ser independente
+assim que suas métricas são conhecidas.
+
+\subsection{Passo 10: limpeza e registro}
+
+Por fim, os mecanismos que a análise de sensibilidade mostrou sem efeito podem
+ser removidos do código, desde que o teste de regressão sobre a coleta de
+calibração continue resultando em identidade. Os resultados do teste são
+registrados em um \textit{commit} próprio:
+
+\begin{footnotesize}
+\begin{verbatim}
+> python main.py --replay datasets/run_CAL
+> git diff --stat -- datasets/run_CAL/predictions.csv
+>
+> git add datasets/run_TESTE <arquivos da limpeza>
+> git commit -m "Avalia a nova configuração no conjunto de teste"
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Cuidados}
+
+\begin{itemize}
+  \item \textbf{Saídas sobrescritas}. Os módulos gravam seus resultados em
+    nomes fixos dentro do diretório da coleta. Executá-los sobre coletas de
+    análises anteriores substitui os arquivos que fundamentam aqueles
+    resultados; para consultá-las, as execuções devem ser feitas sobre uma
+    cópia do diretório.
+  \item \textbf{Histórico das consultas}. A pontuação histórica das consultas é
+    guardada pelo texto exato de cada consulta. Como o texto inclui o ano, as
+    consultas de um novo ano começam sem histórico.
+  \item \textbf{Padrão de URL com ano}. A lista de padrões de URL do filtro de
+    listagem contém \texttt{/editais-2026}. Com o peso $w_p$ igual a 0, os
+    padrões não influenciam a pontuação; se a nova análise voltar a dar peso a
+    eles, esse padrão deve ser atualizado.
+  \item \textbf{Tamanho da amostra}. Com poucos editais abertos, uma diferença
+    de um item altera muito as métricas do resultado final
+    (Seção~\ref{sec:ameacas}). Entre as coletas disponíveis, convém escolher
+    para a calibração e para o teste as que tenham mais editais abertos.
+\end{itemize}

@@ -249,7 +249,8 @@ Embora os trabalhos analisados apresentem contribuições relevantes para difere
 
 O sistema foi desenvolvido em Python e organizado como um \textit{pipeline} de
 coleta, filtragem e avaliação de editais. Os editais encontrados ficam em um
-banco relacional, que o próprio servidor atualiza a cada 24 horas, e são
+banco relacional, que o próprio servidor atualiza diariamente, à meia-noite no
+horário de Brasília, e são
 apresentados ao usuário por uma interface web de consulta. Esta seção descreve
 as tecnologias empregadas, agrupadas por função no sistema.
 
@@ -312,9 +313,11 @@ A interface web é servida pelo \textit{framework} Flask, na versão 3.1.1, que
 também expõe um único \textit{endpoint} de leitura, responsável por devolver em
 formato JSON os editais com prazo vigente. As páginas HTML são geradas pelo
 motor de \textit{templates} Jinja2, integrado ao Flask. A atualização automática
-do banco de dados, repetida a cada 24 horas, é executada em segundo plano por
-meio do módulo nativo \texttt{threading}, sem bloquear o atendimento às
-requisições.
+do banco de dados, repetida diariamente à meia-noite, é executada em segundo
+plano por meio do módulo nativo \texttt{threading}, sem bloquear o atendimento
+às requisições. O horário é calculado no fuso de Brasília
+(\texttt{America/Sao\_Paulo}) pelo módulo nativo \texttt{zoneinfo}, que, no
+Windows, obtém a base de fusos horários do pacote tzdata, na versão 2026.1.
 
 No navegador, o \textit{layout} responsivo e a grade de cards que apresenta os
 editais são construídos com o \textit{framework} CSS Bootstrap, na versão 5.3.3,

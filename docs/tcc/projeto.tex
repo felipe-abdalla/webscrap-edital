@@ -122,7 +122,8 @@ O fluxo de dados pode ser representado por:
 \end{equation*}
 
 Os componentes funcionam em ritmos independentes. O \textit{pipeline} é
-disparado pelo servidor a cada 24 horas e grava no banco. O cliente consulta o
+disparado pelo servidor diariamente, à meia-noite no horário de Brasília, e
+grava no banco. O cliente consulta o
 servidor somente quando o usuário pressiona o botão ``Atualizar'', e o
 servidor responde com o conteúdo do banco naquele momento, sem executar o
 \textit{pipeline}. Assim, o tempo de resposta da página não depende da
@@ -268,6 +269,14 @@ labels.csv      & Rótulos manuais de cada item (Tabela~\ref{tab:rotulos}). \\
 metrics.csv     & Métricas de classificação de cada etapa. \\
 features.csv    & Pontuações das heurísticas para cada item, calculadas sem a
                   cadeia de filtros. \\
+predictions\_coleta.csv & Predições gravadas no momento da coleta, com
+                  persistência, preservadas antes do reprocessamento. \\
+*\_pre\_calibracao.csv & Predições e métricas da configuração original,
+                  preservadas no congelamento (somente na coleta de
+                  calibração). \\
+sensitivity\_base/, variants/, grid/ & Resultados da análise de
+                  sensibilidade, da comparação de variantes e da busca em
+                  grade (somente na coleta de calibração). \\
 \bottomrule
 \end{tabularx}
 \fonte{Elaborado pelo autor.}
@@ -319,7 +328,8 @@ Isso permite comparar as decisões do sistema com os rótulos manuais e
 identificar em qual etapa cada erro ocorreu.
 
 \textbf{Atualização no servidor e cache no cliente} (RF09 e RNF04). A coleta é
-de responsabilidade exclusiva do servidor, que a executa a cada 24 horas. O
+de responsabilidade exclusiva do servidor, que a executa diariamente à
+meia-noite, no horário de Brasília. O
 cliente guarda no navegador a última lista recebida e só faz nova requisição
 quando o usuário pressiona ``Atualizar''. Desse modo, o número de chamadas à
 API de busca não depende do número de usuários nem de quantas vezes a página é
