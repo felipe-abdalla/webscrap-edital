@@ -1,10 +1,12 @@
+from pipeline.search.query_ranker import current_year
 from pipeline.search.query_storage import load_stats, save_stats
 
 def evaluate_results(results):
     # Penaliza query ruim
     if not results:
         return -2
-    
+
+    year = current_year()
     score = 0
 
     for r in results:
@@ -15,7 +17,7 @@ def evaluate_results(results):
             score += 2
         if "inscrição" in content or "prazo" in content:
             score += 1
-        if "2026" in content:
+        if year in content:
             score += 1
 
     return score

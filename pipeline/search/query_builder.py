@@ -29,8 +29,8 @@ def generate_queries() -> list[str]:
         "site:capes.gov.br",
     ]
 
-    from pipeline.search.query_ranker import YEAR
-    time_terms = [YEAR, "aberto", "inscrições abertas"]
+    from pipeline.search.query_ranker import current_year
+    YEAR = current_year()
 
     queries = []
 
@@ -46,7 +46,7 @@ def generate_queries() -> list[str]:
 
     # Queries regionais
     queries.extend([
-        "edital inovação Espírito Santo 2026",
+        f"edital inovação Espírito Santo {YEAR}",
         "chamada pública tecnologia Sudeste Brasil",
     ])
 
