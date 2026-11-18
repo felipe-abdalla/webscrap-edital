@@ -1,7 +1,7 @@
-"""Uso: python -m pipeline.evaluation.evaluator datasets/run_XXXX"""
+"""Uso: python -m pipeline.evaluation.evaluator datasets/run_XXXX [--excluir datasets/run_YYYY ...]"""
 """Etapas não executadas contam como negativas"""
+import argparse
 import csv
-import sys
 from pathlib import Path
 
 from pipeline.evaluation.metrics import confusion, summarize
@@ -109,13 +109,37 @@ def write_metrics(run_dir: Path, results: dict):
                              f"{m['precision']:.3f}", f"{m['recall']:.3f}",
                              f"{m['f1']:.3f}", f"{m['f2']:.3f}"])
 
+def labeled_ids(run_dirs: list[Path]) -> set[str]:
+    """Identificadores já rotulados em outras coletas (o id deriva da URL normalizada)"""
+    ids = set()
+    for d in run_dirs:
+        path = d / "labels.csv"
+        if not path.exists():
+            raise SystemExit(f"[ERRO] {path} não existe")
+        ids |= {row["id"] for row in _read_csv(path)}
+    return ids
+
 def main():
-    run_dir = Path(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("run_dir")
+    parser.add_argument("--excluir", nargs="+", default=[], metavar="RUN_DIR",
+                        help="ao criar o labels.csv, omite os itens já rotulados nessas coletas")
+    args = parser.parse_args()
+    run_dir = Path(args.run_dir)
 
     if not (run_dir / "labels.csv").exists():
-        path = init_labels(run_dir, _read_csv(run_dir / "predictions.csv"))
+        predictions = _read_csv(run_dir / "predictions.csv")
+        seen = labeled_ids([Path(d) for d in args.excluir])
+        kept = [p for p in predictions if p["id"] not in seen]
+        path = init_labels(run_dir, kept)
+        if args.excluir:
+            print(f"{len(predictions) - len(kept)} de {len(predictions)} itens já rotulados "
+                  f"em {', '.join(args.excluir)} foram omitidos.")
         print(f"labels.csv criado em {path}. Preencha os rótulos e rode novamente.")
         return
+
+    if args.excluir:
+        print("[AVISO] labels.csv já existe; --excluir só atua na criação e foi ignorado")
 
     results = evaluate(run_dir)
     write_metrics(run_dir, results)
