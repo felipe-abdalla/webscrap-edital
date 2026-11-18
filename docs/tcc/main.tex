@@ -1,6 +1,6 @@
 % Documento mínimo para compilar os capítulos 2 a 7 e o apêndice isolados (ex.: no Overleaf).
 % Compilar: pdflatex main -> bibtex main -> pdflatex main -> pdflatex main
-\documentclass[12pt,oneside,a4paper,brazil]{abntex2}
+\documentclass[12pt,oneside,a4paper,english,brazil]{abntex2}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -11,6 +11,10 @@
 
 \begin{document}
 
+\pretextual
+\input{pretextuais}
+
+\textual
 \include{referencial_teorico}
 \include{metodologia}
 \include{projeto}

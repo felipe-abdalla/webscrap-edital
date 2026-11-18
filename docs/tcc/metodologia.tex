@@ -150,13 +150,13 @@ $\theta_L$          & Limiar de classificação                 & 5 \\
 \subsection{Filtro de relevância}
 \label{subsec:relevancia}
 
-A pontuação de relevância $R$ conta ocorrências de palavras inteiras de um
+A pontuação de relevância $V$ conta ocorrências de palavras inteiras de um
 vocabulário ponderado, no texto convertido para minúsculas, conforme a
 Equação~\eqref{eq:relevancia}:
 
 \begin{equation}
 \label{eq:relevancia}
-R = \sum_{k \in K^{+}} w_k\, n_k + \sum_{k \in K^{-}} w_k\, n_k + B(\rho),
+V = \sum_{k \in K^{+}} v_k\, n_k + \sum_{k \in K^{-}} v_k\, n_k + B(\rho),
 \qquad
 \rho = \frac{\sum_{k \in K^{+}} n_k}{N}
 \end{equation}
@@ -167,7 +167,7 @@ vocabulário negativo $K^{-}$ contém ``resultado'' e ``notícia'' (peso $-2$),
 além de ``publicado'' e ``evento'' (peso $-1$). $n_k$ é o número de
 ocorrências do termo $k$ e $N$ é o número total de palavras. O bônus de
 densidade é definido pela Equação~\eqref{eq:bonus}, e a página é considerada
-relevante quando $R \geq 3$. A configuração original tinha ainda um limiar
+relevante quando $V \geq 3$. A configuração original tinha ainda um limiar
 secundário, de valor 2, aplicado após o limiar principal.
 
 \begin{equation}
@@ -505,18 +505,18 @@ edital aberto e relevante. A diferença observada de editais perdidos é
 
 \noindent e a de itens errados aceitos, $\Delta_e$, é definida da mesma forma
 com os indicadores $e_i$. Valores negativos indicam melhora da configuração
-calibrada. Em cada uma das $B = 2.000$ reamostras, sorteiam-se $n$ índices com
+calibrada. Em cada uma das $M = 2.000$ reamostras, sorteiam-se $n$ índices com
 reposição, $i_1^{*}, \dots, i_n^{*}$, e calcula-se
 
 \begin{equation}
-\Delta_p^{*} = \sum_{k=1}^{n} \left( p_{i_k^{*}}^{c} - p_{i_k^{*}}^{o} \right),
+\Delta_p^{*} = \sum_{j=1}^{n} \left( p_{i_j^{*}}^{c} - p_{i_j^{*}}^{o} \right),
 \label{eq:bootstrap_reamostra}
 \end{equation}
 
 \noindent e, do mesmo modo, $\Delta_e^{*}$. Como os mesmos itens são
 sorteados para as duas configurações, a variação entre as reamostras reflete
 apenas a composição da amostra. O intervalo de confiança de 95\% é dado pelos
-percentis 2,5\% e 97,5\% das $B$ diferenças reamostradas (método percentil
+percentis 2,5\% e 97,5\% das $M$ diferenças reamostradas (método percentil
 \cite{efron1993}), isto é, pelos valores nas posições 51 e 1.951 da lista
 ordenada. Um intervalo inteiramente abaixo de zero significa que mais de
 97,5\% das reamostras indicaram melhora; um intervalo que contém o zero
