@@ -1,4 +1,4 @@
-% Documento mínimo para compilar os capítulos 2 a 7 isolados (ex.: no Overleaf).
+% Documento mínimo para compilar os capítulos 2 a 7 e o apêndice isolados (ex.: no Overleaf).
 % Compilar: pdflatex main -> bibtex main -> pdflatex main -> pdflatex main
 \documentclass[12pt,oneside,a4paper,brazil]{abntex2}
 
@@ -19,5 +19,10 @@
 \include{conclusao}
 
 \bibliography{referencias}
+
+\begin{apendicesenv}
+\partapendices
+\include{apendice_bootstrap}
+\end{apendicesenv}
 
 \end{document}

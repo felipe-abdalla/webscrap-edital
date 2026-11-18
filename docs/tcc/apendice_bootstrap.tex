@@ -1,0 +1,60 @@
+\chapter{Dados por item do \textit{bootstrap} no conjunto de teste}
+\label{ap:bootstrap}
+
+Este apêndice apresenta os dados de que depende o \textit{bootstrap} do
+conjunto de teste (Seções~\ref{subsec:etapaD} e~\ref{sec:res_teste}). Para cada
+um dos 26 itens rotulados, registraram-se quatro indicadores: se o item é um
+edital descartado como listagem ($p_i$, edital perdido) e se foi aceito sem
+ser um edital aberto e relevante ($e_i$, item errado aceito), na configuração
+original ($o$) e na calibrada ($c$). Os indicadores da configuração original
+foram obtidos com o código da versão anterior à calibração, pois parte das
+regras daquela configuração foi removida do código.
+
+A Tabela~\ref{tab:bootstrap_itens} lista os 9 itens com pelo menos um
+indicador igual a 1. Nos 17 itens restantes, os quatro indicadores são nulos,
+e esses itens só contribuem para o \textit{bootstrap} com diferença zero. Os
+indicadores dos 26 itens estão no arquivo \texttt{bootstrap\_itens.csv} do
+diretório da coleta de teste, o que permite refazer o cálculo da
+Equação~\ref{eq:bootstrap} sem o código do sistema.
+
+\begin{table}[htbp]
+\centering
+\caption{Itens do conjunto de teste com algum indicador não nulo}
+\label{tab:bootstrap_itens}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{l >{\raggedright\arraybackslash}X c c c c c}
+\toprule
+ & & & \multicolumn{2}{c}{Perdido} & \multicolumn{2}{c}{Errado} \\
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+Item & Título & Edital & $p_i^{o}$ & $p_i^{c}$ & $e_i^{o}$ & $e_i^{c}$ \\
+\midrule
+\texttt{74b6d263} & Edital de seleção MICSUL 2026 --- Ministério da Cultura & sim & 1 & 0 & 0 & 0 \\
+\texttt{7e538218} & Chamada Pública 13/2026 - Ipea & sim & 1 & 0 & 0 & 0 \\
+\texttt{f2aa1063} & Chamada de Propostas 42/2026: Auxílio à Inovação Regular\ldots{} & sim & 0 & 0 & 1 & 0 \\
+\texttt{aba75096} & Chamada Pública 008/2026 - Ipea & sim & 1 & 0 & 0 & 0 \\
+\texttt{10dcced2} & Chamada Pública nº 027/2026 - Ipea & sim & 1 & 0 & 0 & 0 \\
+\texttt{59f6fdcd} & Chamada de Propostas FAPESP e Ohio State University 2026 & sim & 0 & 0 & 0 & 1 \\
+\texttt{c49162cf} & [PDF] licitacao@cnpq.br . CONDIÇÕES PARA RETIRADA DO EDIT\ldots{} & sim & 1 & 1 & 0 & 0 \\
+\texttt{0e026f2a} & Edital MCT / CNPq No 70/2008 & sim & 0 & 0 & 1 & 0 \\
+\texttt{63adc331} & Prêmio Jovem Cientista | FRM - Fundação Roberto Marinho & não & 0 & 0 & 0 & 1 \\
+\midrule
+\multicolumn{3}{l}{Total nos 26 itens} & 5 & 1 & 2 & 2 \\
+\bottomrule
+\end{tabularx}
+\fonte{Elaborado pelo autor. Os identificadores estão abreviados aos oito
+primeiros caracteres, e os títulos longos, truncados.}
+\end{table}
+
+A tabela mostra a origem das duas diferenças. Nos editais perdidos, a
+configuração calibrada recuperou quatro editais e não perdeu nenhum que a
+original não perdesse; as diferenças por item, $p_i^{c} - p_i^{o}$, são todas
+nulas ou negativas, e por isso nenhuma reamostra pode indicar piora. O único
+edital perdido pelas duas configurações é o item \texttt{c49162cf}, rotulado
+como aberto sem data-limite explícita. Nos itens errados aceitos, o total igual
+esconde uma troca: as duas configurações aceitaram indevidamente itens
+diferentes. A original aceitou dois editais com inscrições encerradas, ambos
+fora do tema, e a calibrada, um edital com inscrições encerradas e a página de
+listagem de um prêmio. As diferenças por item são $+1$ em dois itens e $-1$ em outros dois,
+e o resultado de cada reamostra depende de quantos de cada grupo são
+sorteados, o que explica o intervalo largo e centrado em zero.

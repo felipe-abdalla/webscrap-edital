@@ -491,6 +491,39 @@ acaso \cite{cawley2010}, a escolha da grade foi submetida a duas verificações:
     configurações sobre os mesmos itens.
 \end{itemize}
 
+O \textit{bootstrap} é, portanto, pareado. Para cada item rotulado $i$, com
+$i = 1, \dots, n$, registram-se os indicadores $p_i^{o}, p_i^{c} \in \{0, 1\}$,
+iguais a 1 quando o item é um edital descartado como listagem pela
+configuração original ($o$) ou pela calibrada ($c$), e
+$e_i^{o}, e_i^{c} \in \{0, 1\}$, iguais a 1 quando o item é aceito sem ser um
+edital aberto e relevante. A diferença observada de editais perdidos é
+
+\begin{equation}
+\Delta_p = \sum_{i=1}^{n} \left( p_i^{c} - p_i^{o} \right),
+\label{eq:bootstrap}
+\end{equation}
+
+\noindent e a de itens errados aceitos, $\Delta_e$, é definida da mesma forma
+com os indicadores $e_i$. Valores negativos indicam melhora da configuração
+calibrada. Em cada uma das $B = 2.000$ reamostras, sorteiam-se $n$ índices com
+reposição, $i_1^{*}, \dots, i_n^{*}$, e calcula-se
+
+\begin{equation}
+\Delta_p^{*} = \sum_{k=1}^{n} \left( p_{i_k^{*}}^{c} - p_{i_k^{*}}^{o} \right),
+\label{eq:bootstrap_reamostra}
+\end{equation}
+
+\noindent e, do mesmo modo, $\Delta_e^{*}$. Como os mesmos itens são
+sorteados para as duas configurações, a variação entre as reamostras reflete
+apenas a composição da amostra. O intervalo de confiança de 95\% é dado pelos
+percentis 2,5\% e 97,5\% das $B$ diferenças reamostradas (método percentil
+\cite{efron1993}), isto é, pelos valores nas posições 51 e 1.951 da lista
+ordenada. Um intervalo inteiramente abaixo de zero significa que mais de
+97,5\% das reamostras indicaram melhora; um intervalo que contém o zero
+significa que a amostra não permite distinguir as duas configurações. A
+semente do gerador de números aleatórios é fixa, o que torna os intervalos
+reproduzíveis.
+
 \subsection{Etapa E: congelamento e teste}
 \label{subsec:etapaE}
 
