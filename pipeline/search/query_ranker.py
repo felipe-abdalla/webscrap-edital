@@ -1,6 +1,6 @@
 from pipeline.search.query_storage import load_stats
 
-# Ano configurável em tempo de execução pela web app
+# Ano de referência das consultas
 YEAR: str = "2026"
 
 

@@ -1,4 +1,4 @@
-# Variáveis mutáveis em nível de módulo — alteráveis pela web app em tempo de execução
+# Tópicos das consultas temáticas
 TOPICS: list[str] = [
     "inovação",
     "tecnologia",

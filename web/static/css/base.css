@@ -1,0 +1,36 @@
+/* ── Tokens ─────────────────────────────────────────────── */
+:root {
+  --brand:        #0A3D62;
+  --brand-mid:    #1565a8;
+  --accent:       #F0A500;
+  --surface:      #F4F7FB;
+  --card-bg:      #FFFFFF;
+  --border:       #DDE3EE;
+  --text:         #1A2540;
+  --muted:        #6B7A99;
+  --success:      #1B7F5E;
+  --danger:       #C0392B;
+  --tag-bg:       #EAF0FA;
+  --tag-text:     #2C5BAA;
+  --radius:       10px;
+  --shadow:       0 2px 12px rgba(10,61,98,.07);
+  --shadow-hover: 0 6px 24px rgba(10,61,98,.13);
+}
+
+/* ── Base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;  /* evita o aumento automático de fonte no iOS ao girar */
+  text-size-adjust: 100%;
+}
+
+body {
+  /* Arimo tem as mesmas métricas da Arial; se não carregar, usa a própria Arial */
+  font-family: 'Arimo', Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;              /* nenhum conteúdo longo cria rolagem lateral */
+}

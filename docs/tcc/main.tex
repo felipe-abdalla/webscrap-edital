@@ -1,0 +1,23 @@
+% Documento mínimo para compilar os capítulos 2 a 7 isolados (ex.: no Overleaf).
+% Compilar: pdflatex main -> bibtex main -> pdflatex main -> pdflatex main
+\documentclass[12pt,oneside,a4paper,brazil]{abntex2}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array,makecell,longtable}
+\usepackage[alf]{abntex2cite}
+
+\begin{document}
+
+\include{referencial_teorico}
+\include{metodologia}
+\include{projeto}
+\include{implementacao}
+\include{resultados}
+\include{conclusao}
+
+\bibliography{referencias}
+
+\end{document}

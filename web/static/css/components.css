@@ -1,0 +1,171 @@
+/* ── Botão Atualizar ────────────────────────────────────── */
+.btn-update {
+  background: var(--accent);
+  color: var(--brand);
+  font-family: inherit;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  min-height: 44px;              /* alvo de toque confortável */
+  padding: 10px 22px;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  transition: background .2s, box-shadow .2s;
+}
+
+.btn-update:hover:not(:disabled) {
+  background: #e09500;
+  box-shadow: 0 4px 14px rgba(240,165,0,.35);
+}
+
+.btn-update:focus-visible {
+  outline: 3px solid var(--brand-mid);
+  outline-offset: 2px;
+}
+
+.btn-update:disabled { opacity: .6; cursor: not-allowed; }
+.btn-update.loading i { animation: spin 1s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Card de edital ─────────────────────────────────────── */
+.edital-card {
+  position: relative;            /* o link do título cobre o card inteiro */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: box-shadow .2s, border-color .2s, transform .15s;
+  min-width: 0;
+}
+
+.edital-card:hover,
+.edital-card:focus-within {
+  box-shadow: var(--shadow-hover);
+  border-color: var(--brand-mid);
+}
+
+.edital-title {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--brand);
+  margin: 0;
+  overflow-wrap: anywhere;
+  /* Até 3 linhas: cards da mesma linha ficam com a mesma estrutura */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.edital-title a { color: inherit; text-decoration: none; }
+.edital-title a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.edital-title a:focus-visible { outline: none; }
+.edital-card:focus-within { outline: 3px solid var(--brand-mid); outline-offset: 2px; }
+
+/* Prazo em cima, domínio embaixo: mesma ordem em todos os cards */
+.edital-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: auto;
+  min-width: 0;
+}
+
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .8rem;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.meta-badge > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta-badge.domain        { background: var(--tag-bg); color: var(--tag-text); }
+.meta-badge.deadline-ok   { background: #eaf5ee; color: var(--success); }
+.meta-badge.deadline-warn { background: #fff8e8; color: #9a6700; }
+
+@media (min-width: 768px) {
+  .edital-card { padding: 18px 20px; }
+  .edital-card:hover { transform: translateY(-2px); }
+}
+
+/* ── Estado vazio ───────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--muted);
+}
+
+.empty-state i { font-size: 3rem; opacity: .25; display: block; margin-bottom: 14px; }
+.empty-state p { font-size: .95rem; margin: 0; }
+
+/* ── Toast ──────────────────────────────────────────────── */
+#toast-wrap {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast-msg {
+  background: var(--brand);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  font-size: .9rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-hover);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  max-width: 420px;
+  animation: slideUp .3s ease;
+}
+
+.toast-msg.success { background: var(--success); }
+.toast-msg.error   { background: var(--danger); }
+
+@media (min-width: 576px) {
+  #toast-wrap { left: auto; align-items: flex-end; }
+  .toast-msg { width: auto; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Movimento reduzido ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

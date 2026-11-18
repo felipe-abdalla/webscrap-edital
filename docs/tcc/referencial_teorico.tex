@@ -1,0 +1,336 @@
+\chapter[REFERENCIAL TEÓRICO]{Referencial Teórico}
+
+O sistema faz uso dos princípios de recuperação de informação, filtragem e processamento de dados obtidos através de uma conexão com uma API de busca na Web para fazer a listagem de links relevantes ao usuário final.
+
+\section{Recuperação de informação}
+
+A Recuperação de Informação (RI), do inglês \textit{Information Retrieval}, constitui uma área da Ciência da Computação dedicada ao desenvolvimento de métodos e sistemas capazes de representar, armazenar, organizar e recuperar informações relevantes a partir de grandes coleções de documentos. Diferentemente de sistemas tradicionais de consulta a bancos de dados, nos quais as informações são normalmente estruturadas e as consultas podem depender de correspondências bem definidas entre atributos, sistemas de recuperação de informação lidam frequentemente com documentos textuais não estruturados ou semiestruturados \cite{manning2008}.
+
+Segundo \citeonline{manning2008}, um sistema de Recuperação de Informação tem como uma de suas principais funções identificar, dentro de uma coleção de documentos, aqueles que apresentam maior relação com uma determinada necessidade de informação expressa por meio de uma consulta. Dessa forma, a recuperação não deve ser compreendida apenas como a localização de documentos que contenham determinados termos, mas como um processo de seleção e ordenação de documentos de acordo com sua possível relevância para a consulta realizada.
+
+A relevância constitui, portanto, um dos conceitos fundamentais da Recuperação de Informação. Em uma busca, nem todos os documentos recuperados necessariamente atendem à necessidade de informação do usuário. Um documento pode conter termos presentes na consulta e, ainda assim, apresentar conteúdo inadequado ou insuficiente para o objetivo pretendido. Dessa forma, sistemas de recuperação precisam empregar mecanismos que permitam diferenciar documentos potencialmente relevantes daqueles que representam apenas correspondências superficiais \cite{baeza2011}.
+
+No contexto deste trabalho, essa distinção é particularmente importante devido à natureza das informações pesquisadas. O sistema proposto tem como objetivo localizar, na Web, oportunidades relacionadas a editais de fomento, chamadas públicas e iniciativas de incentivo à inovação. Uma consulta contendo termos como 'edital', 'inovação' ou 'financiamento', por exemplo, pode retornar páginas institucionais, notícias, páginas de listagem, documentos encerrados e outros conteúdos que não correspondem diretamente a uma oportunidade de fomento aplicável. Assim, a utilização de um mecanismo de busca representa apenas a primeira etapa do processo, sendo necessárias etapas posteriores de processamento e filtragem para determinar a pertinência dos resultados.
+
+\subsection{Consultas e palavras-chave}
+
+A consulta representa a expressão utilizada para especificar uma necessidade de informação ao sistema de recuperação. Em mecanismos de busca, essa expressão pode ser constituída por uma ou mais palavras-chave e outros elementos responsáveis por restringir ou ampliar o conjunto de documentos recuperados. O modo como uma consulta é formulada possui influência direta sobre os documentos retornados, uma vez que diferentes termos podem produzir conjuntos distintos de resultados \cite{manning2008}.
+
+A construção de consultas constitui, portanto, uma etapa relevante em sistemas de recuperação de informação. Consultas muito genéricas podem produzir uma quantidade elevada de resultados com baixa relação com a necessidade de informação, enquanto consultas excessivamente específicas podem restringir o conjunto recuperado e deixar de contemplar documentos potencialmente relevantes. \citeonline{baeza2011} destacam, nesse contexto, a importância da representação das consultas e de mecanismos capazes de recuperar e ordenar documentos de acordo com sua relevância.
+
+No sistema desenvolvido neste trabalho, as consultas são construídas a partir de palavras-chave relacionadas ao domínio dos editais de fomento. Termos que indicam o tipo de oportunidade, como 'edital', 'chamada pública' e 'bolsa pesquisa', são combinados com o operador \texttt{site:}, que direciona a busca ao domínio de uma instituição de fomento, e com o ano de referência. Uma consulta gerada pelo sistema é, por exemplo, \texttt{edital site:fapesp.br 2026}. As consultas são ordenadas por uma pontuação heurística, que considera a presença desses elementos e o desempenho obtido pela consulta em execuções anteriores, e a busca é interrompida quando se atinge um número máximo de resultados.
+
+Essa abordagem privilegia a precisão da recuperação: ao direcionar a busca a domínios institucionais, reduz-se a quantidade de páginas sem relação com o fomento, ao custo de deixar de recuperar oportunidades publicadas em outros sítios. Os resultados obtidos, entretanto, são considerados documentos candidatos, e não necessariamente resultados finais, uma vez que a etapa de recuperação não garante que todas as páginas retornadas sejam pertinentes ao domínio da aplicação.
+
+\subsection{Relevância dos documentos}
+
+A relevância pode ser entendida como o grau de correspondência entre um documento recuperado e a necessidade de informação representada pela consulta. Em sistemas de Recuperação de Informação, a determinação da relevância é um problema fundamental, pois uma consulta pode recuperar documentos que apresentam diferentes níveis de relação com o objetivo do usuário \cite{baeza2011}.
+
+Essa característica é especialmente evidente na recuperação de informações na Web. Uma determinada página pode mencionar um edital apenas como parte de uma notícia, apresentar uma relação de diversos editais ou conter informações históricas sobre uma chamada pública já encerrada. Embora essas páginas possam apresentar correspondência lexical com os termos utilizados na consulta, sua utilidade para a necessidade específica do usuário pode ser limitada.
+
+No sistema proposto, essa questão é tratada por meio de etapas posteriores à recuperação. Os documentos obtidos pela API são submetidos a processos de análise e filtragem destinados a identificar páginas que apresentem características compatíveis com o domínio dos editais de fomento. Dessa forma, a recuperação de informação é utilizada como mecanismo de obtenção de candidatos, enquanto a avaliação da relevância é realizada posteriormente segundo critérios definidos para a aplicação.
+
+Essa separação entre recuperação e filtragem permite estabelecer uma arquitetura em etapas, na qual diferentes processos podem contribuir para a seleção dos resultados:
+
+\begin{equation}
+\text{Consulta}
+\rightarrow
+\text{Recuperação}
+\rightarrow
+\text{Processamento}
+\rightarrow
+\text{Filtragem}
+\rightarrow
+\text{Resultados}
+\end{equation}
+
+Essa estrutura é compatível com abordagens de Recuperação de Informação que distinguem as etapas de consulta, indexação, recuperação, classificação e avaliação dos resultados \cite{baeza2011}.
+
+\subsection{Precisão e revocação}
+
+A avaliação de sistemas de Recuperação de Informação pode ser realizada por meio de diferentes métricas. Entre as medidas tradicionalmente utilizadas encontram-se a precisão (\textit{precision}), denotada neste trabalho por $P$, e a revocação (\textit{recall}), denotada por $R$ \cite{manning2008}.
+
+A precisão representa a proporção dos documentos recuperados que são considerados relevantes para determinada necessidade de informação. Pode ser expressa pela Equação~\ref{eq:precisao}:
+
+\begin{equation}
+P =
+\frac{\text{documentos relevantes recuperados}}
+{\text{documentos recuperados}}
+\label{eq:precisao}
+\end{equation}
+
+A revocação, por sua vez, representa a proporção dos documentos relevantes existentes na coleção que foram recuperados pelo sistema, conforme a Equação~\ref{eq:revocacao}:
+
+\begin{equation}
+R =
+\frac{\text{documentos relevantes recuperados}}
+{\text{documentos relevantes existentes}}
+\label{eq:revocacao}
+\end{equation}
+
+Essas métricas representam aspectos diferentes do desempenho de um sistema de recuperação. Um sistema pode recuperar uma quantidade reduzida de documentos, porém apresentar elevada proporção de resultados relevantes, caracterizando uma situação de maior precisão. Por outro lado, um sistema pode recuperar uma quantidade maior de documentos relevantes e, simultaneamente, apresentar resultados irrelevantes, afetando sua precisão. A relação entre essas medidas constitui uma questão importante na avaliação de sistemas de recuperação \cite{manning2008}.
+
+Para o sistema proposto, a distinção entre precisão e revocação é relevante porque existe um equilíbrio entre recuperar uma quantidade ampla de oportunidades de fomento e limitar a quantidade de resultados que não apresentam relação suficiente com o domínio pesquisado. Uma filtragem excessivamente restritiva pode eliminar oportunidades potencialmente relevantes, enquanto uma filtragem muito permissiva pode produzir uma quantidade elevada de resultados que necessitam de análise posterior.
+
+No contexto deste trabalho, a avaliação da recuperação pode ser realizada a partir de um conjunto de consultas e de julgamentos de relevância previamente estabelecidos, permitindo verificar a proporção de resultados considerados pertinentes ao domínio dos editais de fomento. Essa avaliação também pode ser utilizada para comparar diferentes estratégias de geração de consultas e de filtragem.
+
+\section{Motores de busca e API de busca}
+
+Os motores de busca desempenham um papel fundamental na localização de informações, permitindo que usuários expressem suas necessidades por meio de consultas e obtenham como resposta um conjunto de documentos ou páginas potencialmente relevantes. A recuperação dessas informações envolve diferentes etapas, incluindo a coleta, a indexação, a análise das consultas e a ordenação dos resultados \cite{baeza2011}.
+
+No contexto deste trabalho, o sistema não implementa um motor de busca próprio. Em vez disso, utiliza um mecanismo de busca externo por meio de uma interface de programação de aplicações, permitindo que as funcionalidades de recuperação sejam incorporadas à aplicação desenvolvida.
+
+\subsection{APIs de busca}
+
+Uma API (\textit{Application Programming Interface}) consiste em uma interface que permite a comunicação programática entre diferentes componentes de software. Em vez de realizar uma interação manual com uma aplicação, um sistema pode enviar requisições estruturadas a uma API e receber respostas que podem ser processadas automaticamente \cite{jacobson2011}.
+
+No contexto de mecanismos de busca, uma API permite que uma aplicação utilize funcionalidades de pesquisa sem precisar implementar internamente toda a infraestrutura responsável pela coleta, indexação e recuperação das páginas.
+
+A arquitetura simplificada utilizada neste trabalho pode ser representada por:
+
+\begin{equation}
+\text{Aplicação}
+\rightarrow
+\text{API de Busca}
+\rightarrow
+\text{Motor de Busca}
+\rightarrow
+\text{Resultados}
+\end{equation}
+
+Dessa maneira, a API funciona como uma camada de comunicação entre o sistema desenvolvido e o serviço responsável pela recuperação das informações.
+
+Essa abordagem apresenta uma vantagem importante para o desenvolvimento da aplicação: a infraestrutura de busca é fornecida por um serviço externo, enquanto o sistema pode concentrar sua lógica nas etapas específicas do problema, como geração das consultas, processamento dos resultados, filtragem, identificação de prazos e deduplicação.
+
+Do ponto de vista arquitetural, a utilização de uma API também permite separar responsabilidades entre os componentes. O mecanismo externo é responsável pela recuperação inicial dos documentos, enquanto a aplicação desenvolvida é responsável pelo processamento e pela interpretação dos resultados de acordo com os critérios definidos para o domínio dos editais de fomento.
+
+\subsection{A API Tavily}
+
+A API de busca utilizada neste trabalho é a Tavily, um serviço comercial de busca na Web voltado à integração com aplicações e agentes de software \cite{tavily}. Diferentemente da página de resultados de um motor de busca convencional, destinada à leitura por pessoas, a Tavily devolve os resultados em formato estruturado, adequado ao processamento automático. A comunicação ocorre por meio de requisições HTTP: a aplicação envia ao serviço a consulta, uma chave de acesso e parâmetros como o número máximo de resultados e a profundidade da busca, e recebe uma resposta em formato JSON com a lista de páginas encontradas. Para cada página, a resposta informa o título, a URL e um trecho do conteúdo relacionado à consulta.
+
+No sistema proposto, cada consulta gerada é enviada à Tavily na modalidade de busca básica, com até cinco resultados por consulta. O título, a URL e o trecho devolvidos são usados como metadados do documento candidato, e o trecho serve ainda como texto substituto quando não é possível obter o conteúdo da própria página. A Tavily atua, assim, apenas na etapa de recuperação: a decisão sobre quais páginas correspondem a editais com inscrições abertas é tomada pelo próprio sistema, nas etapas posteriores de processamento e filtragem.
+
+\section{Calibração e validação de heurísticas}
+\label{sec:ref_validacao}
+
+Heurísticas baseadas em pesos e limiares dependem da escolha desses parâmetros, que costuma ser feita a partir de uma amostra de exemplos rotulados. Essa escolha envolve dois problemas: comparar configurações segundo mais de um critério e estimar se o desempenho observado na amostra se mantém em dados não vistos. Esta seção apresenta três técnicas empregadas no procedimento de calibração deste trabalho: o critério lexicográfico, a validação cruzada e o método \textit{bootstrap}.
+
+\subsection{Critério lexicográfico}
+\label{subsec:ref_lexicografico}
+
+Em problemas de decisão com múltiplos critérios, uma forma de comparar alternativas é ordenar os critérios por prioridade e aplicá-los em sequência, de modo semelhante à ordenação das palavras em um dicionário. Segundo \citeonline{fishburn1974}, em uma ordem lexicográfica a alternativa preferida é a que apresenta o melhor valor no critério de maior prioridade; o segundo critério só é considerado quando há empate no primeiro, o terceiro só quando há empate nos dois anteriores, e assim por diante. Formalmente, dados os critérios $f_1, f_2, \ldots, f_n$, em ordem de prioridade, uma alternativa $a$ é preferível a uma alternativa $b$ quando existe um índice $k$ tal que $f_i(a) = f_i(b)$ para todo $i < k$ e $f_k(a)$ é melhor que $f_k(b)$.
+
+Esse critério é não compensatório: nenhuma melhora em um critério de menor prioridade compensa uma piora em um critério de maior prioridade. Essa característica é adequada quando os critérios têm importâncias muito diferentes e não podem ser convertidos em uma escala comum, pois dispensa a definição de pesos entre eles \cite{fishburn1974}. Neste trabalho, o critério lexicográfico é usado para comparar configurações das heurísticas, priorizando, nesta ordem, não aceitar mais itens errados, não perder editais e, por fim, maximizar a métrica de classificação da etapa (Seção~\ref{subsec:etapaC}).
+
+\subsection{Validação cruzada}
+\label{subsec:ref_validacao_cruzada}
+
+Quando os parâmetros de um modelo são escolhidos com base em uma amostra, o desempenho medido nessa mesma amostra tende a ser otimista, pois a escolha se ajusta também às particularidades dos exemplos disponíveis. A validação cruzada é uma técnica para estimar o desempenho em dados não utilizados no ajuste \cite{kohavi1995}. Na validação cruzada em $k$ partições (\textit{k-fold cross-validation}), a amostra é dividida aleatoriamente em $k$ subconjuntos de tamanho aproximadamente igual. Em cada uma das $k$ rodadas, um subconjunto é retido para avaliação e os $k-1$ restantes são usados no ajuste; a estimativa final é obtida a partir dos resultados das $k$ rodadas. Cada exemplo é, assim, avaliado exatamente uma vez por um modelo que não o utilizou no ajuste.
+
+Como o resultado depende da divisão aleatória, o procedimento pode ser repetido com divisões diferentes, o que reduz a variância da estimativa \cite{kohavi1995}. Além disso, quando há seleção de parâmetros, toda a seleção deve ser refeita dentro de cada rodada, usando apenas os exemplos de ajuste. Caso contrário, os exemplos retidos influenciam a escolha e a estimativa volta a ser otimista \cite{cawley2010}. Neste trabalho, a validação cruzada é usada para verificar se a configuração escolhida pela busca em grade do filtro de listagem se mantém vantajosa em itens não usados na escolha (Seção~\ref{subsec:etapaD}).
+
+\subsection{Método \textit{bootstrap}}
+\label{subsec:ref_bootstrap}
+
+O \textit{bootstrap} é um método de reamostragem que estima a variabilidade de uma estatística sem exigir hipóteses sobre a distribuição dos dados \cite{efron1993}. A partir de uma amostra com $n$ exemplos, geram-se $B$ reamostras, cada uma formada por $n$ exemplos sorteados com reposição da amostra original. Assim, em cada reamostra, alguns exemplos aparecem mais de uma vez e outros não aparecem. A estatística de interesse é calculada em cada reamostra, e a distribuição dos $B$ valores obtidos aproxima a distribuição amostral da estatística.
+
+Dessa distribuição pode ser obtido um intervalo de confiança. No método dos percentis, o intervalo de 95\% é delimitado pelos percentis 2,5 e 97,5 dos valores obtidos nas reamostras \cite{efron1993}. Quando o objetivo é comparar dois sistemas avaliados sobre os mesmos exemplos, a reamostragem é feita sobre os exemplos, e a estatística de cada reamostra é a diferença entre os dois sistemas. Desse modo, a comparação é pareada, e um intervalo que não contém o zero indica uma diferença consistente entre eles. Neste trabalho, o \textit{bootstrap} é usado para estimar o intervalo de confiança da diferença entre a configuração calibrada e a original (Seção~\ref{subsec:etapaD}).
+
+\section{Trabalhos Correlatos}
+
+\subsection{Scraping de Repositórios Científicos Online: Desafios e Soluções para Extração Automatizada de Conteúdo}
+
+\textbf{Título original:} Scraping Scientific Web Repositories: Challenges and Solutions for Automated Content Extraction.
+
+\textbf{Autores:} Philipp Meschenmoser, Norman Meuschke, Manuel Hotz e Bela Gipp.
+
+\textbf{Publicação:} D-Lib Magazine, volume 22, números 9/10, 2016.
+
+\citeonline{meschenmoser2016} descrevem uma ferramenta cujo objetivo é permitir a comparação do desempenho de publicação científica de pesquisadores de uma mesma área, auxiliando, por exemplo, comitês de seleção na identificação de candidatos. A ferramenta é composta por um \textit{scraper}, desenvolvido em Python com a biblioteca Scrapy, que obtém dados do repertório de trabalhos de um pesquisador, e por uma interface web que apresenta ao usuário final as métricas calculadas pelo sistema.
+
+Os desafios encontrados pelos autores foram divididos em três categorias: limitações no conjunto de resultados retornados por consulta, conteúdo carregado de forma dinâmica nas páginas e barreiras de acesso. Para cada uma delas, o trabalho apresenta estratégias de solução, incorporadas a uma ferramenta de código aberto que compara o desempenho de pesquisadores com base nos dados obtidos do Google Scholar.
+
+Assim como a ferramenta de Meschenmoser et al., o sistema proposto neste trabalho busca e processa, de forma automatizada, dados obtidos na Web. A diferença está na finalidade e na forma de obtenção desses dados: enquanto a ferramenta dos autores coleta páginas por \textit{scraping} para construir métricas de comparação entre pesquisadores, o sistema proposto obtém os documentos candidatos por meio de uma API de busca e, após o processamento, descarta os registros que não atendem aos critérios definidos, apresentando ao usuário final uma lista de links úteis.
+
+\subsection{Construindo Aplicações Web Avançadas Usando Data Ingestion e Ferramentas de Processamento de Dados}
+
+\textbf{Título original:} Building Advanced Web Applications Using Data Ingestion and
+Data Processing Tools
+
+\textbf{Autores:} Šimun Šprem, Nikola Tomažin, Jelena Matečić e Marko Horvat
+
+\textbf{Publicação:} Electronics, volume 13, número 4, artigo 709, 2024.
+
+O trabalho de \citeonline{sprem2024} tem como objetivo apresentar ferramentas e arquiteturas utilizadas na aquisição e no processamento de dados em aplicações web avançadas, com ênfase na eficiência, na integração e na escalabilidade desses processos. Para isso, os autores apresentam a arquitetura da ferramenta Dataphos Publisher e realizam um experimento comparativo com uma solução de \textit{Change Data Capture} (CDC), o Debezium. Também realizam uma análise qualitativa de ferramentas de processamento de dados, entre elas Apache Spark, Apache Flink, Kafka Streams e Apache Beam.
+
+No experimento realizado, o Dataphos Publisher apresentou desempenho pelo menos 2,3 vezes superior ao do Debezium nos cenários avaliados. O artigo discute ainda as características, as vantagens e as limitações das ferramentas de processamento analisadas, oferecendo orientações para a escolha de tecnologias conforme as necessidades de cada aplicação.
+
+O trabalho de Šprem et al. relaciona-se à proposta deste TCC ao discutir técnicas e ferramentas destinadas à aquisição, ao processamento e ao armazenamento de dados em aplicações Web. Ambos os trabalhos apresentam uma arquitetura composta por diferentes etapas de processamento, nas quais dados inicialmente obtidos de fontes externas são tratados e organizados para utilização posterior. Entretanto, enquanto o trabalho dos autores concentra-se na ingestão e no processamento de grandes volumes de dados, com ênfase na integração de sistemas, na escalabilidade e no processamento de fluxos de dados, o sistema proposto neste TCC tem como objetivo localizar e identificar oportunidades de fomento relevantes para empresas incubadas. Dessa forma, o trabalho de Šprem et al. contribui para esta pesquisa ao apresentar conceitos e estratégias relacionados à organização de pipelines de dados, ao tratamento de informações e à persistência, oferecendo fundamentação para a estruturação dos processos de aquisição e processamento empregados no sistema proposto.
+
+\subsection{Heurísticas de Decisão para Comparação: Quão Boas Elas São?}
+
+\textbf{Título original:} Decision Heuristics for Comparison: How Good Are They?
+
+\textbf{Autores:} Marcus Buckmann e Özgür Şimşek.
+
+\textbf{Publicação:} Proceedings of Machine Learning Research, volume 58, 2017, páginas 1–11.
+
+O estudo de \citeonline{buckmann2017} tem como objetivo avaliar o desempenho de heurísticas simples de decisão em problemas de comparação entre alternativas. Nesse contexto, os autores procuram determinar se métodos que utilizam poucas informações e regras relativamente simples conseguem apresentar resultados competitivos em relação a modelos estatísticos mais complexos.
+
+Para isso, os autores realizaram uma avaliação empírica comparativa entre diferentes heurísticas de decisão e algoritmos de aprendizado de máquina, utilizando 56 conjuntos de dados reais, provenientes de diferentes áreas do conhecimento, com tamanhos que variam de 17 a 3.281 objetos e quantidades de atributos entre 3 e 21.
+
+Inicialmente, os conjuntos de dados foram preparados para permitir a aplicação dos métodos avaliados. Os valores ausentes foram substituídos por medidas estatísticas, como média, mediana ou moda, conforme o tipo de atributo. Os atributos categóricos também foram transformados em representações binárias, enquanto os atributos ordinais foram recodificados de acordo com a direção da diferença entre os objetos comparados.
+
+Na etapa de avaliação, foram consideradas três heurísticas: \textit{single-cue}, que utiliza um único atributo para orientar a decisão; \textit{tallying}, que combina os resultados dos atributos por meio de um sistema de votação; e \textit{take-the-best}, que analisa os atributos sequencialmente, seguindo uma ordem de importância previamente estabelecida. Essas abordagens foram comparadas com algoritmos de classificação, como Support Vector Machines (SVM), Random Forests e Naive Bayes, além de métodos de regressão, incluindo regressão linear múltipla e regressão por florestas aleatórias.
+
+O desempenho dos métodos foi analisado por meio de curvas de aprendizado, nas quais a quantidade de exemplos utilizados no treinamento era progressivamente aumentada. Para isso, os autores realizaram amostragens repetidas dos conjuntos de dados, utilizando uma parcela dos exemplos para teste e os demais para treinamento. O procedimento foi repetido milhares de vezes para reduzir a influência de variações decorrentes da amostragem.
+
+Os resultados indicam que as heurísticas apresentaram desempenho competitivo em relação aos métodos estatísticos avaliados: em média, ficaram apenas alguns pontos percentuais abaixo do melhor algoritmo e, em diversos conjuntos de dados, alcançaram a maior acurácia em toda ou em parte da curva de aprendizado. Os autores também destacam o baixo custo computacional e a menor necessidade de informações dessas abordagens, características que podem favorecer sua aplicação em determinados problemas de decisão.
+
+A relação com o sistema proposto neste TCC está no emprego de critérios heurísticos para orientar decisões durante o processamento de dados. Entretanto, enquanto Buckmann e Şimşek investigam a seleção entre alternativas com base na comparação de suas características, o sistema desenvolvido neste trabalho utiliza critérios definidos previamente para avaliar a relevância individual de registros recuperados por uma API de busca. Dessa forma, o trabalho dos autores contribui para a fundamentação metodológica da solução proposta, ao demonstrar que abordagens heurísticas podem constituir alternativas viáveis para problemas de decisão, especialmente quando se busca reduzir a complexidade computacional e a dependência de modelos estatísticos mais sofisticados.
+
+\subsection{Análise comparativa dos trabalhos correlatos}
+
+A análise dos trabalhos correlatos permite identificar diferentes abordagens relacionadas às etapas de desenvolvimento do sistema proposto. \citeonline{meschenmoser2016} contribuem com aspectos relacionados à extração automatizada de informações na Web, enquanto \citeonline{sprem2024} apresentam conceitos relacionados à ingestão, ao processamento e à persistência de dados. Por sua vez, \citeonline{buckmann2017} oferecem fundamentação para a utilização de heurísticas como mecanismos de apoio à tomada de decisão.
+
+Embora os trabalhos analisados apresentem contribuições relevantes para diferentes componentes da solução, eles não possuem como objetivo principal a identificação automatizada de oportunidades de fomento destinadas a empresas incubadas. Nesse contexto, o sistema proposto busca integrar mecanismos de recuperação de informações, filtragem por critérios de relevância, extração de prazos e deduplicação, organizando os resultados em um conjunto de registros que possa ser consultado pelo usuário.
+
+ \begin{table}[ht]
+    \centering
+    \caption{Comparação entre os trabalhos correlatos e o trabalho proposto}
+    \label{tab:trabalhos_correlatos}
+    \small
+    \begin{tabularx}{\textwidth}{
+        >{\raggedright\arraybackslash}p{2.8cm}
+        >{\raggedright\arraybackslash}X
+        >{\raggedright\arraybackslash}X
+        >{\raggedright\arraybackslash}X
+    }
+        \toprule
+        \textbf{Trabalho} &
+        \textbf{Objetivo} &
+        \textbf{Abordagem} &
+        \textbf{Contribuição para o TCC} \\
+        \midrule
+
+        Meschenmoser et al. (2016) &
+        Extração automatizada de informações de repositórios científicos. &
+        Web scraping com Python e Scrapy, associado a uma interface para apresentação de métricas. &
+        Fundamentação sobre aquisição automatizada de informações disponíveis na Web e desafios da extração de conteúdo. \\
+
+        \midrule
+
+        Šprem et al. (2024) &
+        Analisar ferramentas e arquiteturas de ingestão e processamento de dados em aplicações Web. &
+        Desenvolvimento e avaliação do Dataphos Publisher, além de análise comparativa de ferramentas de processamento. &
+        Fundamentação sobre organização de pipelines, processamento e persistência de dados. \\
+
+        \midrule
+
+        Buckmann e Şimşek (2017) &
+        Avaliar o desempenho de heurísticas simples em problemas de comparação entre alternativas. &
+        Comparação empírica de heurísticas de decisão com algoritmos de aprendizado de máquina, utilizando 56 conjuntos de dados. &
+        Fundamentação metodológica para o emprego de heurísticas na análise e tomada de decisões sobre dados. \\
+
+        \midrule
+
+        \textbf{Trabalho proposto} &
+        Identificar oportunidades de fomento relevantes para empresas incubadas. &
+        Geração de consultas, recuperação por API de busca, filtragem heurística, extração de prazos, deduplicação e persistência dos registros. &
+        --- \\
+
+        \bottomrule
+    \end{tabularx}
+    \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+\section{Tecnologias Utilizadas}
+\label{sec:tecnologias}
+
+O sistema foi desenvolvido em Python e organizado como um \textit{pipeline} de
+coleta, filtragem e avaliação de editais. Os editais encontrados ficam em um
+banco relacional, que o próprio servidor atualiza a cada 24 horas, e são
+apresentados ao usuário por uma interface web de consulta. Esta seção descreve
+as tecnologias empregadas, agrupadas por função no sistema.
+
+\subsection{Linguagem e ambiente}
+
+Todo o \textit{backend} foi implementado na linguagem Python \cite{python}, na
+versão 3.14. As informações sensíveis, como a chave de acesso à API de busca e
+a \textit{string} de conexão com o banco de dados, não ficam no código-fonte:
+são lidas de variáveis de ambiente, carregadas a partir de um arquivo local pela
+biblioteca python-dotenv (versão 1.2.2). Os módulos nativos \texttt{argparse} e
+\texttt{logging} fornecem, respectivamente, a interface de linha de comando,
+pela qual o \textit{pipeline} é executado, e o registro das mensagens de cada
+execução.
+
+\subsection{Coleta de dados}
+
+A busca por páginas candidatas a editais é feita pela Tavily Search API
+\cite{tavily}, um serviço externo de busca na Web que recebe as consultas
+geradas pelo sistema e devolve, para cada uma, uma lista de resultados com URL,
+título e resumo. As requisições à API e o \textit{download} das páginas
+encontradas são feitos com a biblioteca Requests \cite{requests}, na versão
+2.34.2. O texto das páginas é extraído conforme o formato do documento: as
+páginas HTML são interpretadas pela biblioteca Beautiful Soup 4
+\cite{beautifulsoup}, na versão 4.14.3, e os editais publicados em PDF têm o
+texto extraído pela biblioteca pypdf \cite{pypdf}, na versão 6.21.4.
+
+\subsection{Processamento de texto}
+
+As heurísticas de relevância, de classificação de páginas de listagem e de
+vigência de prazos são implementação própria e operam sobre o texto extraído.
+Para isso, o sistema utiliza os módulos nativos \texttt{re}, de expressões
+regulares, empregado inclusive no reconhecimento das datas presentes nas frases
+candidatas a prazo, e \texttt{unicodedata}, que normaliza a acentuação dos
+caracteres antes das comparações. A biblioteca \textit{dateparser} \cite{dateparser}, na
+versão 1.4.0, interpreta as datas encontradas no procedimento alternativo
+(\textit{fallback}) da extração de prazos.
+
+A deduplicação de documentos combina duas técnicas. O módulo nativo
+\texttt{hashlib} gera uma assinatura MD5 \cite{rivest1992} do conteúdo,
+que identifica cópias idênticas. Para documentos semelhantes, mas não
+idênticos, utiliza-se uma implementação própria da similaridade de Jaccard
+\cite{jaccard1901,broder1997} entre os conjuntos de palavras dos documentos.
+
+\subsection{Persistência de dados}
+
+Os editais aceitos são armazenados no sistema gerenciador de banco de dados
+relacional PostgreSQL \cite{postgresql}, executado em um contêiner Docker
+\cite{docker}, o que isola o banco do restante do ambiente e simplifica sua
+instalação. O acesso ao banco é feito pela biblioteca SQLModel, na versão
+0.0.38, que realiza o mapeamento objeto-relacional (ORM) sobre as bibliotecas
+SQLAlchemy e Pydantic. A conexão entre o Python e o PostgreSQL é estabelecida
+pelo \textit{driver} psycopg2, na versão 2.9.11. Além do banco, o sistema
+utiliza arquivos nos formatos JSON e CSV para guardar as estatísticas de
+desempenho das consultas e os \textit{snapshots} das execuções, compostos por
+manifesto, predições, rótulos e métricas.
+
+\subsection{Interface web}
+
+A interface web é servida pelo \textit{framework} Flask, na versão 3.1.1, que
+também expõe um único \textit{endpoint} de leitura, responsável por devolver em
+formato JSON os editais com prazo vigente. As páginas HTML são geradas pelo
+motor de \textit{templates} Jinja2, integrado ao Flask. A atualização automática
+do banco de dados, repetida a cada 24 horas, é executada em segundo plano por
+meio do módulo nativo \texttt{threading}, sem bloquear o atendimento às
+requisições.
+
+No navegador, o \textit{layout} responsivo e a grade de cards que apresenta os
+editais são construídos com o \textit{framework} CSS Bootstrap, na versão 5.3.3,
+e os ícones da interface vêm da biblioteca Bootstrap Icons, na versão 1.11.3. O
+comportamento da página é implementado em JavaScript, organizado em módulos ES,
+e a lista de editais é obtida do servidor por meio da Fetch API. A última lista
+recebida é guardada no próprio navegador pela Web Storage API
+(\textit{localStorage}), de modo que uma nova visita à página não gera
+requisição ao servidor.
+
+\subsection{Avaliação e reprodutibilidade}
+
+A avaliação do sistema é feita por um módulo de implementação própria, que
+calcula a matriz de confusão e as métricas de desempenho e executa os
+experimentos e a análise de sensibilidade descritos no
+Capítulo~\ref{cap:metodologia}. O código-fonte é versionado com o Git
+\cite{git}. O identificador do \textit{commit} é registrado em cada execução,
+junto com as versões das bibliotecas, o que permite associar cada resultado ao
+código que o produziu e reproduzir os experimentos.
