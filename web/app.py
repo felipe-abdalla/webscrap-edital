@@ -1,7 +1,8 @@
 """
 web/app.py
 Servidor Flask do WebGate: exibe os editais abertos que estão no banco e
-mantém o banco atualizado, executando o pipeline a cada UPDATE_INTERVAL_HOURS.
+mantém o banco atualizado, executando o pipeline diariamente às UPDATE_TIME
+(horário de UPDATE_TIMEZONE; por padrão, meia-noite de Brasília).
 Executar a partir da raiz do projeto:  python -m web.app
 """
 
@@ -11,15 +12,16 @@ import mimetypes
 import os
 import sys
 import threading
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from flask import Flask, jsonify, render_template
 from sqlmodel import Session, select
 
-from config.settings import AUTO_UPDATE, UPDATE_INTERVAL_HOURS
+from config.settings import AUTO_UPDATE, UPDATE_TIME, UPDATE_TIMEZONE
 from database.db import create_db, engine
 from domain.edital import Edital
 from pipeline.pipeline import EditalPipeline
@@ -40,14 +42,17 @@ app = Flask(__name__)
 # ---------------------------------------------------------------------------
 
 class Updater:
-    """Executa o pipeline (coleta + processamento + persistência) a cada
-    `interval`. O instante da última coleta é lido do snapshot mais recente
-    em datasets/, de modo que reiniciar o servidor não antecipa a coleta."""
+    """Executa o pipeline (coleta + processamento + persistência) todos os dias
+    no horário `at` do fuso `tz`. O instante da última coleta é lido do
+    snapshot mais recente em datasets/, de modo que reiniciar o servidor não
+    antecipa a coleta; se o servidor estava desligado no horário agendado, a
+    coleta perdida é executada assim que ele voltar."""
 
     RETRY_AFTER = timedelta(hours=1)  # espera após uma coleta que falhou
 
-    def __init__(self, interval: timedelta):
-        self.interval = interval
+    def __init__(self, at: time, tz: ZoneInfo):
+        self.at = at
+        self.tz = tz
         self.running = False
         self.last_error: str | None = None
         self._lock = threading.Lock()
@@ -62,9 +67,17 @@ class Updater:
         with open(runs[-1], encoding="utf-8") as f:
             return datetime.fromisoformat(json.load(f)["run_at"])
 
+    def _next_slot_after(self, moment: datetime) -> datetime:
+        """Primeiro horário agendado estritamente posterior a `moment`"""
+        local = moment.astimezone(self.tz)
+        slot = datetime.combine(local.date(), self.at, tzinfo=self.tz)
+        if slot <= local:
+            slot = datetime.combine(local.date() + timedelta(days=1), self.at, tzinfo=self.tz)
+        return slot
+
     def next_update(self) -> datetime:
         last = self.last_collection()
-        due = last + self.interval if last else datetime.now().astimezone()
+        due = self._next_slot_after(last) if last else datetime.now(self.tz)
         if self._retry_at and self._retry_at > due:
             return self._retry_at
         return due
@@ -101,7 +114,7 @@ class Updater:
         threading.Thread(target=self.loop, name="webgate-updater", daemon=True).start()
 
 
-updater = Updater(timedelta(hours=UPDATE_INTERVAL_HOURS))
+updater = Updater(time.fromisoformat(UPDATE_TIME), ZoneInfo(UPDATE_TIMEZONE))
 
 
 def _iso(dt: datetime | None) -> str | None:
